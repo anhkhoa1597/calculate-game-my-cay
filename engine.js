@@ -1,4 +1,4 @@
-/* Snapshot source: aenhatrang.com/g/5f4be5d7038028cafd44.js, 27/09/2026. */
+/* Rules checked: aenhatrang.com/g/0b73001557557d1e26f9.js (2.3.8), 02/10/2026. Catalog unchanged from 27/09/2026. */
 (function(root){
 'use strict';
 const data=typeof module==='object'?require('./game-data.js'):GAME_DATA;
@@ -9,12 +9,16 @@ const staff=data[2].rows.map(r=>({id:r[0],name:r[1],daily:r[2],role:r[3],level:r
 const events={normal:1,rain:1.35,hot:.8,weekend:1.25,challenge:1.15,students:1,reviewer:1,sale:1,cold:1.3,payday:1.1,festival:1.45};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const has=(s,id)=>s.upgrades.includes(id), hired=(s,id)=>s.staff.includes(id),menu=s=>has(s,'menu')?1.2:1;
-function defaults(){return {level:1,day:1,stars:4,reviews:0,action:.45,extra:1.2,decor:0,pet:false,dirty:false,noisy:false,buzz:0,event:'auto',broths:['kimchi'],tops:['bo','xucxich'],upgrades:[],staff:[],safe:true,waste:0,prices:Object.fromEntries(items.map(x=>[x.id,x.base]))};}
+const maxChapter=level=>level>=10?5:level>=8?4:level>=5?3:level>=3?2:1;
+const chapter=s=>s.chapter??maxChapter(s.level);
+function service(s){const ch=chapter(s);return {chapter:ch,seats:ch===1?0:has(s,'seat4')?4:ch===2?2:3,app:ch===1||has(s,'app'),appSlots:ch===1?3:2,rent:ch>=3?40000:0,appPace:ch===1?.55:1};}
+function defaults(){return {level:1,chapter:1,day:1,stars:4,reviews:0,action:.45,extra:1.2,decor:0,pet:false,dirty:false,noisy:false,buzz:0,event:'auto',broths:['kimchi'],tops:['bo','xucxich'],upgrades:[],staff:[],safe:true,waste:0,prices:Object.fromEntries(items.map(x=>[x.id,x.base]))};}
 function validate(s){
- for(const k of ['level','day','reviews','decor'])if(!Number.isInteger(s[k]))throw Error('Thông số phải là số nguyên: '+k);
+ for(const k of ['level','chapter','day','reviews','decor'])if(!Number.isInteger(s[k]))throw Error('Thông số phải là số nguyên: '+k);
  for(const k of ['pet','dirty','noisy','safe'])if(typeof s[k]!=='boolean')throw Error('Thông số không hợp lệ: '+k);
  for(const [k,a,b] of [['level',1,10],['day',1,9999],['stars',1,5],['reviews',0,30],['action',.05,10],['extra',0,120],['decor',0,13],['buzz',-.3,.6],['waste',0,10000000]]) if(!Number.isFinite(s[k])||s[k]<a||s[k]>b)throw Error('Thông số không hợp lệ: '+k);
  for(const [k,catalog] of [['broths',broths],['tops',tops],['upgrades',upgrades],['staff',staff]]) if(!Array.isArray(s[k])||new Set(s[k]).size!==s[k].length||s[k].some(id=>!catalog.some(x=>x.id===id)))throw Error('Danh sách không hợp lệ: '+k);
+ if(s.chapter<1||s.chapter>maxChapter(s.level))throw Error('Chương không hợp lệ với cấp quán.');
  if(!s.broths.length)throw Error('Chọn ít nhất một nước lèo.');
  for(const id of [...s.broths,...s.tops])if(!Number.isFinite(s.prices[id])||s.prices[id]<1000||s.prices[id]>byId[id].base*3||s.prices[id]%1000)throw Error('Giá phải theo bước 1.000đ và trong giới hạn game: '+byId[id].name);
  if(!['auto',...Object.keys(events)].includes(s.event))throw Error('Sự kiện không hợp lệ.');
@@ -25,7 +29,7 @@ function validate(s){
 function traffic(s,p,t,stars=s.stars,event='normal'){
  const ratio=s.broths.reduce((n,id)=>n+p[id]/byId[id].base,0)/s.broths.length/menu(s);
  const bonus=upgrades.reduce((n,x)=>n+(has(s,x.id)?x.traffic:0),0)+(has(s,'led')&&t>115.5?.25:0)+Math.min(.2,s.decor*.02)+Math.min(s.day,30)*.015;
- return (.6+.2*(stars-1))*(stars<4?.65:1)*(1+bonus)*Math.min(1,.65+s.day*.1)*clamp(1+s.buzz,.7,1.6)*(s.dirty?.75:1)*events[event]/clamp(ratio,.85,1.6)**2;
+ return (.6+.2*(stars-1))*(stars<4?.65:1)*(1+bonus)*Math.min(1,.65+s.day*.1)*clamp(1+s.buzz,.7,1.6)*(s.dirty?.75:1)*events[event]*(chapter(s)===2&&['rain','hot'].includes(event)?1.15:1)/clamp(ratio,.85,1.6)**2;
 }
 function expensive(id,p,s){return p>(broths.some(x=>x.id===id)?60000:byId[id].base*1.5)*menu(s);}
 function patience(s){return (66+Math.min(s.level-1,8)*4)*(has(s,'fan')?1.25:1)*(has(s,'wifi')?1.12:1)*(has(s,'chair')?1.12:1)*(has(s,'tv')?1.1:1)*(s.pet?1.08:1);}
@@ -34,11 +38,11 @@ function simulate(s,p,seed){
  const random=rng(seed),pick=(vals,w)=>{let r=random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<vals.length;i++){r-=w[i];if(r<0)return vals[i];}return vals.at(-1);};
  let event=s.event;
  if(event==='auto'){event=s.day>1&&[6,0].includes(s.day%7)?'weekend':s.day>2&&random()<.35?pick(['rain','rain','hot','students','reviewer','sale','cold','payday','festival',...(s.level>=3?['challenge','challenge']:[])],Array(s.level>=3?11:9).fill(1)):'normal';}
- const phase=s.level<3?1:s.level<7?2:3,seats=has(s,'seat4')?4:3,pots=has(s,'pot3')?3:has(s,'pot2')?2:1,cycle=has(s,'fire')?4.2:5.2;
+ const settings=service(s),phase=s.level<3?1:s.level<7?2:3,seats=settings.seats,pots=has(s,'pot3')?3:has(s,'pot2')?2:1,cycle=has(s,'fire')?4.2:5.2;
  const reviews=Array(Math.round(s.reviews)).fill(s.stars),recent=[],groups=[],pot=Array(pots).fill(null),counts=Object.fromEntries(items.map(x=>[x.id,0]));
  let t=0,spawn=1,on=10,basket=0,current=null,helper=1,burst=false,vipPending=false,vipDone=false;
- const fixed=55000+upgrades.reduce((n,x)=>n+(has(s,x.id)?x.daily:0),0)+staff.reduce((n,x)=>n+(hired(s,x.id)?x.daily:0),0);
- const r={sales:0,cost:0,fee:0,tips:0,fixed,waste:s.waste,served:0,arrivals:0,admitted:0,full:0,priceLost:0,timeout:0,unfinished:0,wait:0,ratings:0,ratingCount:0,busy:0,counts,event};
+ const fixed=15000+settings.rent+upgrades.reduce((n,x)=>n+(has(s,x.id)?x.daily:0),0)+staff.reduce((n,x)=>n+(hired(s,x.id)?x.daily:0),0);
+ const r={sales:0,cost:0,fee:0,tips:0,fixed,waste:s.waste,served:0,appServed:0,dineServed:0,arrivals:0,appArrivals:0,dineArrivals:0,admitted:0,full:0,priceLost:0,timeout:0,unfinished:0,wait:0,ratings:0,ratingCount:0,busy:0,counts,event};
  const stars=()=>reviews.length?reviews.reduce((a,b)=>a+b,0)/reviews.length:4;
  const review=(v,vip=false)=>{for(let j=0;j<(vip?3:1);j++){reviews.unshift(v);if(reviews.length>30)reviews.pop();}r.ratings+=v;r.ratingCount++;};
  const weighted=ids=>pick(ids,ids.map(id=>1/(1+1.5*recent.reduce((n,b)=>n+(b.broth===id?1:0)+(b.tops.includes(id)?1:0),0))));
@@ -53,8 +57,8 @@ function simulate(s,p,seed){
  };
  const ids=b=>[b.broth,...b.tops],sale=b=>ids(b).reduce((n,id)=>n+p[id],0),cost=b=>4500+ids(b).reduce((n,id)=>n+byId[id].cost,0),pricey=b=>ids(b).some(id=>expensive(id,p[id],s));
  const arrival=(online=false,force=false)=>{
-  r.arrivals++;
-  if(groups.filter(g=>g.online===online).length>=(online?2:seats)){r.full++;return;}
+  r.arrivals++;if(online)r.appArrivals++;else r.dineArrivals++;
+  if(groups.filter(g=>g.online===online).length>=(online?settings.appSlots:seats)){r.full++;return;}
   if(!online&&!force&&[...s.broths,...s.tops].some(id=>p[id]>2*byId[id].base*menu(s))&&random()<.8){r.priceLost++;if(random()<.1)review(random()<.5?1:2);return;}
   const n=online?1:phase===3?pick([1,2,3],[.5,.32,.18]):phase===2&&event==='weekend'&&random()<.3?2:1, bowls=Array.from({length:n},order);
   if(!force&&bowls.some(pricey)&&random()<.4){r.priceLost++;return;}
@@ -78,10 +82,10 @@ function simulate(s,p,seed){
  // Measured action time / overhead calibrates this upper-bound workflow; action-perfect play is not guaranteed.
  for(let tick=0;tick<2700;tick++){
   t=(tick+1)*.1;
-  if(t<202&&(spawn-=.1)<=0){arrival();const q=t/210,h=q<.08?.8:q<.28?1.45:q<.5?.6:q<.78?1.4:.8;spawn=10/traffic(s,p,t,stars(),event)/h*(.75+random()*.5);}
-  if(event==='students'&&!burst&&t>94.5){burst=true;for(let j=0;j<3;j++)arrival(false,true);}
+  if(seats>0&&t<202&&(spawn-=.1)<=0){arrival();const q=t/210,h=q<.08?.8:q<.28?1.45:q<.5?.6:q<.78?1.4:.8;spawn=10/traffic(s,p,t,stars(),event)/h*(.75+random()*.5);}
+  if(settings.chapter>=2&&event==='students'&&!burst&&t>94.5){burst=true;for(let j=0;j<3;j++)arrival(false,true);}
   if(event==='reviewer'&&!vipDone&&t>73.5){vipDone=true;vipPending=true;spawn=Math.min(spawn,.5);}
-  if(has(s,'app')&&t<200&&(on-=.1)<=0){arrival(true);on=22/traffic(s,p,t,stars(),event)*(event==='rain'?.5:1)*(.7+random()*.6);}
+  if(settings.app&&t<200&&(on-=.1)<=0){arrival(true);on=22/traffic(s,p,t,stars(),event)*(event==='rain'?.5:1)*settings.appPace*(.7+random()*.6);}
   for(const g of [...groups])if(t>=g.deadline){r.timeout++;review(g.online?1:random()<.3?2:1,g.vip);groups.splice(groups.indexOf(g),1);if(current?.g===g){r.waste+=current.cost;current=null;}}
   for(let j=0;j<pot.length;j++)if(pot[j]!==null&&t>=pot[j]){basket++;pot[j]=null;}
   let demand=groups.reduce((n,g)=>n+g.bowls.length-g.index,0)-(current?.noodle?1:0),cooking=pot.filter(x=>x!==null).length;
@@ -89,7 +93,7 @@ function simulate(s,p,seed){
   for(let j=0;j<pot.length;j++)if(pot[j]===null&&basket+cooking<Math.min(3,demand)&&(!hired(s,'boil')||helper<=0)){pot[j]=t+cycle*(hired(s,'boil')?.64:.6);cooking++;helper=.8;}
   if(!current&&groups.length){const g=[...groups].sort((a,b)=>a.deadline-b.deadline)[0],b=g.bowls[g.index];const actions=3+(hired(s,'season')?0:1)+(hired(s,'topping')?0:b.tops.length)+b.spice+(hired(s,'boil')?0:1);current={g,b,remaining:s.extra+s.action*actions,noodle:false,cost:cost(b)};}
   if(current){r.busy+=.1;current.remaining-=.1;if(!current.noodle&&basket){basket--;current.noodle=true;}
-   if(current.remaining<=0&&current.noodle){const {g,b}=current;r.sales+=sale(b);r.fee+=g.online?Math.round(sale(b)*.2):0;r.cost+=cost(b);for(const id of ids(b))counts[id]++;r.served++;g.index++;current=null;if(g.index===g.bowls.length)finish(g);}
+   if(current.remaining<=0&&current.noodle){const {g,b}=current;r.sales+=sale(b);r.fee+=g.online?Math.round(sale(b)*.2):0;r.cost+=cost(b);for(const id of ids(b))counts[id]++;r.served++;if(g.online)r.appServed++;else r.dineServed++;g.index++;current=null;if(g.index===g.bowls.length)finish(g);}
   }
   if(t>=210&&!groups.length)break;
  }
@@ -122,5 +126,5 @@ async function optimize(s,progress=()=>{}){
  const baseline=batch(s,s.prices,256,9000000),validated=batch(s,best.prices,256,9000000);
  return {prices:best.prices,stats:validated,baseline,alternatives:finalists.slice(0,5),tested:all.length};
 }
-const api={data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,expensive,patience,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
+const api={maxChapter,service,data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,expensive,patience,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
 })(typeof window!=='undefined'?window:globalThis);

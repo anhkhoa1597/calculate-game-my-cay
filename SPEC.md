@@ -85,7 +85,7 @@ Thứ tự ưu tiên:
 
 ## 5. Hợp đồng tính toán
 
-Giữ `engine.js`, `game-data.js`, `M.validate`, `M.optimize`, `M.batch`, `M.simulate`, catalog, seed và số lượt kiểm chứng hiện tại. UI không viết một công thức lợi nhuận khác.
+Giữ catalog, seed và số lượt kiểm chứng; cập nhật engine theo source 2.3.8 được người dùng cho phép. Giữ hợp đồng M.validate/M.optimize/M.batch/M.simulate và bổ sung thông số chương. UI không viết một công thức lợi nhuận khác.
 
 - Vốn tô = 1.500đ tô + 3.000đ mì + vốn nước lèo + vốn topping.
 - Thu hút phụ thuộc giá mì trung bình, sao, ngày, trang bị, buzz, sự kiện và điều kiện quán.
@@ -94,7 +94,7 @@ Giữ `engine.js`, `game-data.js`, `M.validate`, `M.optimize`, `M.batch`, `M.sim
 - Lợi nhuận gồm vốn, phí app, tip, thuê nhà, điện/nước, điện trang bị, lương và hao hụt.
 - “Tốt nhất” chỉ trong tập bảng giá đã thử, theo mục tiêu lợi nhuận một ngày; không chứng minh tối ưu toàn cục hoặc dài hạn.
 - Khoảng tin cậy chỉ phản ánh ngẫu nhiên mô phỏng, không bao gồm sai số tốc độ và cơ chế chưa mô phỏng.
-- Data vẫn là snapshot 27/09/2026. Giữ giải thích giới hạn về thiếu hàng, nhiệm vụ/thưởng, drama, giao xa, mặc cả, công thức bí truyền, du lịch, phản hồi review, lên cấp giữa ngày và phí đầu tư.
+- Catalog 27/09/2026 đã đối chiếu không đổi trong source 2.3.8 ngày 02/10/2026. Giữ giải thích giới hạn về thiếu hàng, nhiệm vụ/thưởng, drama, giao xa, mặc cả, công thức bí truyền, du lịch, phản hồi review, lên cấp giữa ngày và phí đầu tư.
 - File trực tiếp có fallback tính trên main thread và báo có thể chậm. Worker lỗi trả trang về trạng thái có thể dùng lại; không tự nhận kết quả của snapshot khác.
 
 ## 6. Stack, cấu trúc và code style
@@ -181,3 +181,9 @@ Ghi trung thực cái đã kiểm tra; không nói đã test điện thoại th�
 - [ ] M08: Checks logic/cú pháp liên quan và smoke test mobile qua; README nêu đúng phạm vi/giới hạn.
 
 Không có câu hỏi sản phẩm bắt buộc còn thiếu. Những yêu cầu UI/storage/test cũ trái bản này được thay thế theo chỉ đạo mới của người dùng.
+
+## Cập nhật được yêu cầu: source 2.3.8
+
+Thêm chương 1–5, mặc định bếp nhà. Chương bị giới hạn bởi level nhưng không tự tăng theo level; cấu hình cũ thiếu chương migrate theo trần level như game, nhắc người chơi xác nhận. Bếp nhà chỉ có app, tối đa 3 đơn và hệ số nhịp 0,55; xe dạo có 2 chỗ, thu hút rain/hot ×1,15; từ chương 3 có 3 chỗ (seat4 tăng 4). Hai chương đầu không thuê; học sinh chỉ burst từ chương 2. Phí app 20% giữ nguyên.
+
+Tách chỉ số app/khách tại quán và cho xem giá hiện tại bên cạnh đề xuất. Đối chiếu ngày 1, LV1, giá kimchi 30.000 bằng nhiều seed; 24 khách thực tế là quan sát để so sánh, không hardcode thành kết quả. Mô phỏng ca bán thông thường chưa tái hiện tô hướng dẫn đầu tiên, giao xa/drama; nói rõ để tránh hứa số khách bằng đúng một lượt chơi. Kiểm tra core gồm chương 1–5, phí/fixed, thời tiết, giới hạn công suất, migrate và Worker.

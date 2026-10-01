@@ -12,10 +12,14 @@ async function run(config, id) {
   return messages;
 }
 (async () => {
-  for (const config of [M.defaults(), {...M.defaults(), level:9, day:30, reviews:30, broths:M.broths.map(x=>x.id), tops:M.tops.map(x=>x.id)}]) {
+  for (const config of [M.defaults(), {...M.defaults(), level:9, chapter:4, day:30, reviews:30, broths:M.broths.map(x=>x.id), tops:M.tops.map(x=>x.id)}]) {
     const messages = await run(config, 17);
     assert(messages.some(m => m.type === 'progress'));
     assert(messages.every(m => m.id === 17));
+    const result=messages.at(-1).result;
+    assert.equal(result.stats.n,256);assert.equal(result.baseline.n,256);
+    assert(result.alternatives.every(x=>x.stats.n===160));
+    for(const id of [...config.broths,...config.tops]){assert.equal(result.prices[id]%1000,0);assert(!M.expensive(id,result.prices[id],config));}
     assert.deepEqual(messages.at(-1), {id:17, type:'result', result:await M.optimize(config)});
   }
   const bad = await run({...M.defaults(), broths:[]}, 18);

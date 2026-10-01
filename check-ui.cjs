@@ -29,3 +29,10 @@ assert.equal(UI.decision(comparison(100,99,100),M.defaults()).kind,'uncertain');
 assert.equal(UI.decision(comparison(100,200),{...M.defaults(),prices:{...M.defaults().prices,kimchi:70000}}).kind,'constraint');
 assert.throws(()=>UI.persist(storage,{...M.defaults(),prices:{...M.defaults().prices,tomyum:NaN}}));
 console.log('PASS: rỗng/step/range, search/lọc và nhánh khuyến nghị tăng/giảm/nhiễu/an toàn.');
+
+const legacy={...M.defaults(),level:9};delete legacy.chapter;raw=JSON.stringify(legacy);
+assert.equal(UI.restore(storage).state.chapter,4);assert(UI.restore(storage).migrated);
+raw=JSON.stringify({...legacy,chapter:1});assert.equal(UI.restore(storage).state.chapter,1);
+UI.persist(storage,UI.restore(storage).state);assert.equal(UI.restore(storage).state.chapter,1);
+raw=JSON.stringify({...legacy,level:1,chapter:3});assert(UI.restore(storage).error);
+console.log('PASS: migrate cấu hình thiếu chương, giữ chương thấp khi level cao, lưu lại chương, chặn chương vượt cấp.');

@@ -52,3 +52,7 @@ Push thành công không đồng nghĩa GitHub Pages đã triển khai; không b
 | Thay đổi UI vô tình đổi kết quả | Không sửa engine/data; giữ checks Worker/seed/công suất |
 
 Không có câu hỏi sản phẩm đang chặn. Desktop, lưu trữ và test UI không được mở rộng ngoài spec đã duyệt.
+
+## R5: source 2.3.8 theo yêu cầu cập nhật
+
+Phạm vi mới cho phép sửa engine/data: đối chiếu source → cập nhật chương/kênh bán/thu hút/fixed → UI và migrate → chạy core/Worker/storage rồi smoke mobile → ghi kết quả và push. Thực hiện tuần tự, triển khai hết trước khi test. Seed và ngân sách tìm giá giữ nguyên; không mô phỏng nhiệm vụ chuyển chương hoặc tô hướng dẫn, không hardcode 24 khách. Kết quả ở tasks/verification.md.

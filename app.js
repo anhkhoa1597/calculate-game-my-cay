@@ -7,9 +7,9 @@ function restore(storage) {
   if (!raw) return {state:Model.defaults(), error:''};
   const parsed = JSON.parse(raw);
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw Error('Cấu hình không phải đối tượng.');
-  const state = Model.validate({...Model.defaults(), ...parsed, prices:{...Model.defaults().prices, ...parsed.prices}});
+  const state = Model.validate({...Model.defaults(), ...parsed, chapter:parsed.chapter??Model.maxChapter(parsed.level??1), prices:{...Model.defaults().prices, ...parsed.prices}});
   if(state.reviews===0)state.stars=4;
-  return {state, error:''};
+  return {state, error:'', migrated:parsed.chapter==null};
  } catch (error) { return {state:Model.defaults(), error:error.message}; }
 }
 function persist(storage, state) {
@@ -41,7 +41,7 @@ else init();
 function init() {
 const M = Model;
 const $=id=>document.getElementById(id),money=n=>Math.round(n).toLocaleString('vi-VN')+'đ',num=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:1}),escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const numeric=['level','day','stars','reviews','action','extra','decor','buzz','waste'],bool=['pet','dirty','noisy','safe'];
+const numeric=['level','chapter','day','stars','reviews','action','extra','decor','buzz','waste'],bool=['pet','dirty','noisy','safe'];
 let storage;
 try { storage = window.localStorage; } catch (_) { storage = {getItem(){throw Error('Trình duyệt chặn lưu trữ.');},setItem(){throw Error('Trình duyệt chặn lưu trữ.');}}; }
 const restored = restore(storage);
@@ -52,7 +52,7 @@ function save(){
 }
 function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error);$('mobile-status').textContent=text;$('mobile-status').classList.toggle('error',error);}
 function draw(){
- for(const id of numeric)$(id).value=state[id];for(const id of bool)$(id).checked=state[id];$('event').value=state.event;
+ for(const option of $('chapter').options)option.disabled=Number(option.value)>M.maxChapter(state.level);for(const id of numeric)$(id).value=state[id];for(const id of bool)$(id).checked=state[id];$('event').value=state.event;
  for(const [kind,catalog] of [['upgrades',M.upgrades],['staff',M.staff]])$(kind).innerHTML=catalog.map(x=>`<label class="check"><input type="checkbox" data-kind="${kind}" value="${x.id}" ${state[kind].includes(x.id)?'checked':''} ${x.level>state.level?'disabled':''}><span>${escapeHTML(x.name)} <small>LV${x.level} · ${money(x.daily)} / ngày${kind==='upgrades'?' · mua '+money(x.cost):''}<br>${escapeHTML(x.hint)}</small></span></label>`).join('');
  $('menurows').innerHTML=[['NƯỚC LÈO',M.broths,'broths'],['TOPPING',M.tops,'tops']].map(([title,catalog,kind])=>`<tr class="category" role="row"><td role="cell" colspan="4" data-count="${kind}">${title}</td></tr>`+catalog.map(x=>`<tr role="row" data-item="${x.id}"><td role="cell"><label class="check"><input type="checkbox" data-kind="${kind}" value="${x.id}" ${state[kind].includes(x.id)?'checked':''} ${x.level>state.level?'disabled':''}><span>${escapeHTML(x.name)}<small>${x.level>state.level?'Cần LV'+x.level:'LV'+x.level}${x.unlock?' · mở '+money(x.unlock):' · có sẵn'}</small></span></label></td><td role="cell" data-label="Vốn / phần">${money(x.cost+(kind==='broths'?4500:0))}</td><td role="cell" data-label="Giá hiện tại (đ)"><input type="number" inputmode="numeric" aria-label="Giá hiện tại ${escapeHTML(x.name)}" data-price="${x.id}" min="1000" max="${x.base*3}" step="1000" value="${state.prices[x.id]}" ${!state[kind].includes(x.id)?'disabled':''}></td><td role="cell" data-label="Đề xuất (đ)" class="recommend" data-recommend="${x.id}">${result&&state[kind].includes(x.id)?money(result.prices[x.id]):hasCalculated?'Cần tính lại':'Chưa tính'}</td></tr>`).join('')).join('');
  groupCounts();filterMenu();capacity();
@@ -74,8 +74,8 @@ function groupCounts(){
  const extras=state.decor+(state.pet?1:0)+(state.dirty?1:0)+(state.noisy?1:0)+(state.buzz!==0?1:0)+(state.waste!==0?1:0);
  $('conditions-count').textContent=extras?`${extras} lựa chọn / giá trị đang dùng`:'Theo mặc định';
 }
-function capacity(){const cycle=state.upgrades.includes('fire')?4.2:5.2,pots=state.upgrades.includes('pot3')?3:state.upgrades.includes('pot2')?2:1;
- $('capacity').textContent=`${state.upgrades.includes('seat4')?4:3} bàn · ${pots} nồi luộc · mì chín khoảng ${num(cycle*(state.staff.includes('boil')?.64:.6))} giây. Giảm thời gian thao tác giúp bếp theo kịp khách.`;
+function capacity(){const cycle=state.upgrades.includes('fire')?4.2:5.2,pots=state.upgrades.includes('pot3')?3:state.upgrades.includes('pot2')?2:1,settings=M.service(state);
+ $('capacity').textContent=`Chương ${state.chapter}: ${settings.seats} chỗ tại quán · ${settings.app?settings.appSlots+' đơn app đang chờ':'chưa bật app'} · thuê ${money(settings.rent)}/ngày · ${pots} nồi, mì chín khoảng ${num(cycle*(state.staff.includes('boil')?.64:.6))} giây.`;
 }
 function read(){const s={...state,prices:{...state.prices}};for(const id of numeric)s[id]=($(id).value.trim()===''?NaN:Number($(id).value));for(const id of bool)s[id]=$(id).checked;s.event=$('event').value;
  for(const kind of ['broths','tops','upgrades','staff'])s[kind]=[...document.querySelectorAll(`[data-kind="${kind}"]:checked`)].map(x=>x.value);
@@ -104,11 +104,11 @@ function validateInputs(focus=false){
 $('errors').onclick=e=>{const link=e.target.closest('a');if(!link)return;e.preventDefault();const el=$(link.hash.slice(1));if(el.dataset.price){$('menu-filter').value='all';$('menu-search').value='';filterMenu();}for(let parent=el.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;el.focus();el.scrollIntoView({block:'center'});};
 function stale(){hasCalculated=true;result=null;$('results').innerHTML='<div class="stale">Thông số đã thay đổi. Bấm “Tìm giá cho quán” để tính lại.</div>';for(const el of document.querySelectorAll('[data-recommend]'))el.textContent='Cần tính lại';}
 function changed(e){if(working)return;if(e.target.id==='stars'&&$('reviews').value==='0'){$('reviews').value=30;$('reviews-note').textContent='Đã dùng xấp xỉ 30 đánh giá ở mức sao vừa nhập.';}state=read();
- if(e.target.id==='level'&&Number.isInteger(state.level)&&state.level>=1&&state.level<=10){const previous=[...state.broths,...state.tops,...state.upgrades,...state.staff];for(const [kind,catalog] of [['broths',M.broths],['tops',M.tops],['upgrades',M.upgrades],['staff',M.staff]])state[kind]=state[kind].filter(id=>catalog.find(x=>x.id===id).level<=state.level);if(!state.upgrades.includes('pot2'))state.upgrades=state.upgrades.filter(x=>x!=='pot3');draw();const removed=previous.filter(id=>![...state.broths,...state.tops,...state.upgrades,...state.staff].includes(id));$('level-note').textContent=removed.length?'Đã bỏ khỏi cấu hình vì giảm cấp: '+removed.map(id=>M.byId[id]?.name||M.upgrades.find(x=>x.id===id)?.name||M.staff.find(x=>x.id===id)?.name).join(', '):'Tăng cấp không tự chọn món hoặc mua trang bị.';}
+ if(e.target.id==='level'&&Number.isInteger(state.level)&&state.level>=1&&state.level<=10){const previous=[...state.broths,...state.tops,...state.upgrades,...state.staff];for(const [kind,catalog] of [['broths',M.broths],['tops',M.tops],['upgrades',M.upgrades],['staff',M.staff]])state[kind]=state[kind].filter(id=>catalog.find(x=>x.id===id).level<=state.level);state.chapter=Math.min(state.chapter,M.maxChapter(state.level));if(!state.upgrades.includes('pot2'))state.upgrades=state.upgrades.filter(x=>x!=='pot3');draw();const removed=previous.filter(id=>![...state.broths,...state.tops,...state.upgrades,...state.staff].includes(id));$('level-note').textContent=removed.length?'Đã bỏ khỏi cấu hình vì giảm cấp: '+removed.map(id=>M.byId[id]?.name||M.upgrades.find(x=>x.id===id)?.name||M.staff.find(x=>x.id===id)?.name).join(', '):'Tăng cấp không tự chọn món hoặc mua trang bị.';}
  if(e.target.dataset.kind){if(e.target.value==='pot3'&&e.target.checked&&!state.upgrades.includes('pot2')){state.upgrades.push('pot2');document.querySelector('[data-kind="upgrades"][value="pot2"]').checked=true;}if(e.target.value==='pot2'&&!e.target.checked){state.upgrades=state.upgrades.filter(x=>x!=='pot3');document.querySelector('[data-kind="upgrades"][value="pot3"]').checked=false;}for(const el of document.querySelectorAll('[data-price]'))el.disabled=![...state.broths,...state.tops].includes(el.dataset.price);}
  if(state.reviews===0)$('stars').value=4;groupCounts();filterMenu();capacity();stale();if(!validateInputs()){ $('saved').textContent='Chưa lưu · đang nhập dở';return;}try{M.validate(state);save();status('Sẵn sàng tính lại.');}catch(err){status(err.message+' Cấu hình chưa hợp lệ nên chưa ghi đè bản đã lưu.',true);}
 }
-$('form').addEventListener('input',e=>{if(e.target.id==='level')stale();else changed(e);});
+$('form').addEventListener('input',e=>{if(e.target.id==='chapter'&&Number(e.target.value)>M.maxChapter(state.level))return;changed(e);});
 $('form').addEventListener('change',e=>{if(e.target.id==='level')changed(e);});$('menurows').addEventListener('input',changed);
 $('reset').onclick=()=>{$('reset-confirm').hidden=false;$('cancel-reset').focus();};
 $('cancel-reset').onclick=()=>{$('reset-confirm').hidden=true;$('reset').focus();};
@@ -116,8 +116,8 @@ $('confirm-reset').onclick=()=>{$('reset-confirm').hidden=true;$('storage-note')
 $('unlock').onclick=()=>{state.broths=M.broths.filter(x=>x.level<=state.level).map(x=>x.id);state.tops=M.tops.filter(x=>x.level<=state.level).map(x=>x.id);draw();save();stale();};
 
 function show(r){const a=r.stats,b=r.baseline,delta=a.profit-b.profit,loss=a.timeout+a.unfinished;
- const advice=decision(r,state);const metrics=[['Tô phục vụ / ngày',a.served],['Nhóm / đơn mất vì đầy',a.full],['Hết kiên nhẫn',a.timeout],['Chưa xong khi đóng',a.unfinished],['Sao cuối ngày',a.endStars]];
- const rows=[['Lợi nhuận',b.profit,a.profit,true],['Doanh thu',b.sales,a.sales,true],['Vốn các tô đã giao',b.cost,a.cost,true],['Phí app',b.fee,a.fee,true],['Tip',b.tips,a.tips,true],['Chi phí cố định',b.fixed,a.fixed,true],['Hao hụt',b.waste,a.waste,true],['Tô đã giao',b.served,a.served,false],['Nhóm / đơn ghé',b.arrivals,a.arrivals,false],['Mất vì đầy bàn / app',b.full,a.full,false],['Từ chối vì giá',b.priceLost,a.priceLost,false],['Hết kiên nhẫn',b.timeout,a.timeout,false],['Chưa xong khi đóng',b.unfinished,a.unfinished,false],['Sao cuối ngày',b.endStars,a.endStars,false],['Chờ tới nhận đủ món (giây)',b.wait,a.wait,false]];
+ const advice=decision(r,state);const metrics=[['Tô phục vụ / ngày',a.served],['Tô giao app',a.appServed],['Tô tại quán',a.dineServed],['Nhóm / đơn mất vì đầy',a.full],['Hết kiên nhẫn',a.timeout],['Chưa xong khi đóng',a.unfinished],['Sao cuối ngày',a.endStars]];
+ const rows=[['Lợi nhuận',b.profit,a.profit,true],['Doanh thu',b.sales,a.sales,true],['Vốn các tô đã giao',b.cost,a.cost,true],['Phí app',b.fee,a.fee,true],['Tip',b.tips,a.tips,true],['Chi phí cố định',b.fixed,a.fixed,true],['Hao hụt',b.waste,a.waste,true],['Tô đã giao',b.served,a.served,false],['Lượt thử nhận khách / đơn',b.arrivals,a.arrivals,false],['Lượt app',b.appArrivals,a.appArrivals,false],['Lượt tại quán',b.dineArrivals,a.dineArrivals,false],['Tô giao app',b.appServed,a.appServed,false],['Tô tại quán',b.dineServed,a.dineServed,false],['Mất vì đầy bàn / app',b.full,a.full,false],['Từ chối vì giá',b.priceLost,a.priceLost,false],['Hết kiên nhẫn',b.timeout,a.timeout,false],['Chưa xong khi đóng',b.unfinished,a.unfinished,false],['Sao cuối ngày',b.endStars,a.endStars,false],['Chờ tới nhận đủ món (giây)',b.wait,a.wait,false]];
  const overlap=Math.abs(delta)<=1.96*Math.hypot(a.se,b.se);
  const notes=[...(loss>1?[`Khoảng ${num(loss)} nhóm / đơn không nhận đủ món mỗi ngày. Tăng giá chưa đủ để giải quyết: hãy giảm thời gian thao tác, thêm nồi hoặc tăng kiên nhẫn.`]:[]),...(a.endStars<state.stars-.2?[`Sao dự kiến giảm từ ${num(state.stars)} xuống ${num(a.endStars)}. Giá tối đa lợi nhuận hôm nay có thể làm giảm khách những ngày sau.`]:[]),...(overlap?['Chênh lệch lợi nhuận nằm trong vùng nhiễu mô phỏng; chưa đủ bằng chứng giá mới tốt hơn giá hiện tại.']:[]),...(!state.safe?['Bạn đang cho phép giá bị chê đắt. Kiểm tra dòng từ chối vì giá và sao cuối ngày.']:[])];
  const renderRows=entries=>entries.map(([title,v,w,currency])=>`<tr role="row"><td role="cell">${title}</td><td role="cell" data-label="Hiện tại">${currency?money(v):num(v)}</td><td role="cell" data-label="Đề xuất">${currency?money(w):num(w)}</td></tr>`).join('');
@@ -180,5 +180,6 @@ document.querySelector('details.database').addEventListener('toggle',event=>{
  }catch(error){$('database').textContent='Không dựng được data: '+error.message+'. Đóng và mở lại để thử lại.';}
 });
 draw();
+if(!restored.error&&storage){$('chapter-note').textContent=restored.migrated?'Cấu hình cũ được tạm chọn chương theo cấp. Hãy chọn lại đúng chương đang chơi.':'Chọn đúng chương đang thấy trong game; lên level không tự hoàn thành nhiệm vụ chương.';}
 if(restored.error){$('storage-note').textContent='Không đọc được thông số cũ; đang dùng LV1. Bạn có thể tiếp tục nhập và tìm giá.';}
 }
