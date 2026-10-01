@@ -39,11 +39,32 @@ function show(r){const a=r.stats,b=r.baseline,delta=a.profit-b.profit,loss=a.tim
  for(const el of document.querySelectorAll('[data-recommend]'))el.textContent=[...state.broths,...state.tops].includes(el.dataset.recommend)?money(r.prices[el.dataset.recommend]):'—';
  $('apply').onclick=()=>{state.prices={...r.prices};draw();save();stale();status('Đã lưu giá đề xuất vào cấu hình. Tính lại để so với mốc giá mới.');};
 }
+let requestId = 0;
+function findPrices(config) {
+ if (location.protocol === 'file:' || typeof Worker === 'undefined') {
+  status('Đang tính trực tiếp: trình duyệt có thể chậm. Dùng localhost/Pages để tính nền.');
+  return M.optimize(config, text => status(text + ' (chế độ tính trực tiếp)'));
+ }
+ return new Promise((resolve, reject) => {
+  const id = ++requestId;
+  const worker = new Worker('worker.js');
+  const fail = message => { worker.terminate(); reject(new Error(message)); };
+  worker.onmessage = ({data}) => {
+   if (data.id !== id || id !== requestId) return;
+   if (data.type === 'progress') status(data.text);
+   else if (data.type === 'result') { worker.terminate(); resolve(data.result); }
+   else if (data.type === 'error') fail(data.message);
+  };
+  worker.onerror = () => fail('Không khởi động được Worker. Kiểm tra kết nối và tải lại trang.');
+  worker.onmessageerror = () => fail('Không đọc được kết quả từ Worker.');
+  worker.postMessage({id, config});
+ });
+}
 $('form').onsubmit=async e=>{e.preventDefault();if(working)return;
  try{state=read();M.validate(state);}catch(err){status(err.message,true);return;}
  save();working=true;result=null;$('results').innerHTML='<div class="empty"><h2>Đang tìm giá…</h2><p>So sánh sức bếp, thời gian chờ và lợi nhuận qua nhiều ngày mô phỏng.</p></div>';$('controls').disabled=true;$('unlock').disabled=true;$('export').disabled=true;for(const el of document.querySelectorAll('#menurows input'))el.disabled=true;
  $('results').setAttribute('aria-busy','true');status('Đang mô phỏng các bảng giá…');await new Promise(r=>setTimeout(r,40));
- try{result=await M.optimize(state,text=>status(text));draw();show(result);if(window.matchMedia('(max-width: 800px)').matches)$('results').scrollIntoView({block:'start'});status('Đã tính xong. Kết quả phụ thuộc tốc độ bạn nhập và giả định mô phỏng.');}
+ try{result=await findPrices(structuredClone(state));draw();show(result);if(window.matchMedia('(max-width: 800px)').matches)$('results').scrollIntoView({block:'start'});status('Đã tính xong. Kết quả phụ thuộc tốc độ bạn nhập và giả định mô phỏng.');}
  catch(err){status('Không tính được: '+err.message,true);draw();}
  finally{working=false;$('controls').disabled=false;$('unlock').disabled=false;$('export').disabled=false;$('results').removeAttribute('aria-busy');}
 };
