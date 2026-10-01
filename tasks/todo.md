@@ -22,9 +22,9 @@ Cập nhật 02/10/2026 theo `SPEC.md` mới. Checklist cũ T1–T9 được tha
 **Mô tả:** Làm gọn đường cập nhật → lưu → reload và đường tìm giá; bỏ JSON/phục hồi, giữ reset có xác nhận gọn.
 
 **Acceptance:**
-- [ ] Chỉnh thông số/menu hoặc Tìm giá/Dùng giá tự nhớ cấu hình hợp lệ với key/schema cũ; input sai không ghi đè bản hợp lệ.
-- [ ] Không còn nút/handler import/export/phục hồi JSON; bản lưu hỏng dùng LV1 và cho ghi cấu hình mới, không khóa tác vụ.
-- [ ] Storage lỗi chỉ báo ngắn và không ngăn tính; hủy reset giữ nguyên cấu hình.
+- [x] Chỉnh thông số/menu hoặc Tìm giá/Dùng giá tự nhớ cấu hình hợp lệ với key/schema cũ; input sai không ghi đè bản hợp lệ.
+- [x] Không còn nút/handler import/export/phục hồi JSON; bản lưu hỏng dùng LV1 và cho ghi cấu hình mới, không khóa tác vụ.
+- [x] Storage lỗi chỉ báo ngắn và không ngăn tính; hủy reset giữ nguyên cấu hình.
 
 **Verify:** `node check-ui.cjs`; `node --check app.js`; `git diff --check`; một lần cập nhật → reload và xác nhận đường tính không phụ thuộc save thành công. Chỉnh test phục hồi cũ theo hành vi mới, không dựng hệ thống test storage mới.
 **Dependencies:** R1 đã xong.
@@ -36,9 +36,9 @@ Cập nhật 02/10/2026 theo `SPEC.md` mới. Checklist cũ T1–T9 được tha
 **Mô tả:** Hoàn tất các chỉnh sửa UI đang dở, sửa vướng mắc thực tế trong một luồng mobile; giữ desktop đơn giản.
 
 **Acceptance:**
-- [ ] Nhập quán/menu dễ chạm, đủ đọc; menu/kết quả không kéo ngang và thanh dưới không che thao tác nhập.
-- [ ] Tìm/lọc không mất giá/lựa chọn; Tìm giá hoạt động sau nhập/tìm tên món; kết quả phân biệt lời/lỗ, chênh lệch, sức phục vụ/mất khách/sao đúng.
-- [ ] Luồng tìm → xem → dùng giá → reload chạy được trên mobile; desktop mở và dùng cùng chức năng, không cần layout riêng.
+- [x] Nhập quán/menu dễ chạm, đủ đọc; menu/kết quả không kéo ngang và thanh dưới không che thao tác nhập.
+- [x] Tìm/lọc không mất giá/lựa chọn; Tìm giá hoạt động sau nhập/tìm tên món; kết quả phân biệt lời/lỗ, chênh lệch, sức phục vụ/mất khách/sao đúng.
+- [x] Luồng tìm → xem → dùng giá → reload chạy được trên mobile; desktop mở và dùng cùng chức năng, không cần layout riêng.
 
 **Verify:** `node check-ui.cjs`; `node --check app.js`; smoke khoảng 390px, liếc 320px và mở desktop một lần. Tái dùng bằng chứng cũ cho phần không đổi; không chạy ma trận UI rộng.
 **Dependencies:** R2.
@@ -47,17 +47,17 @@ Cập nhật 02/10/2026 theo `SPEC.md` mới. Checklist cũ T1–T9 được tha
 
 ## Checkpoint: Sau R2–R3
 
-- [ ] Tự nhớ/reload và luồng mobile chính hoạt động; không còn luồng JSON/phục hồi.
-- [ ] Checks liên quan qua; kết quả vẫn từ engine hiện có.
-- [ ] Ghi ngắn kết quả thực đã kiểm tra, tiếp tục R4 theo phạm vi đã duyệt.
+- [x] Tự nhớ/reload và luồng mobile chính hoạt động; không còn luồng JSON/phục hồi.
+- [x] Checks liên quan qua; kết quả vẫn từ engine hiện có.
+- [x] Ghi ngắn kết quả thực đã kiểm tra, tiếp tục R4 theo phạm vi đã duyệt.
 
 ## R4: Bản cập nhật được kiểm tra và đưa lên repo
 
 **Mô tả:** Kiểm tra tính toán và phần kết nối còn lại, cập nhật hướng dẫn, commit/push theo quyền đã có.
 
 **Acceptance:**
-- [ ] Engine/Worker/logic UI/cú pháp liên quan qua; giữ nguyên engine/data/seed/sample count và smoke luồng mobile sau thay đổi cuối.
-- [ ] README ghi đúng tự nhớ phụ, không JSON, Worker/fallback và giới hạn mô hình; không nhận đã test thiết bị thật nếu chưa làm.
+- [x] Engine/Worker/logic UI/cú pháp liên quan qua; giữ nguyên engine/data/seed/sample count và smoke luồng mobile sau thay đổi cuối.
+- [x] README ghi đúng tự nhớ phụ, không JSON, Worker/fallback và giới hạn mô hình; không nhận đã test thiết bị thật nếu chưa làm.
 - [ ] Commit/push hoàn tất, working tree được báo đúng; không suy ra Pages đã triển khai chỉ từ việc push.
 
 **Verify:** `node check.cjs`; `node check-worker.cjs`; `node check-ui.cjs`; `node --check app.js`; `node --check engine.js`; `node --check worker.js`; `git diff --check`; `git status --short`; đối chiếu commit local/remote sau push. Không cần build.
@@ -67,7 +67,7 @@ Cập nhật 02/10/2026 theo `SPEC.md` mới. Checklist cũ T1–T9 được tha
 
 ## Checkpoint: Hoàn tất
 
-- [ ] M01–M08 được đối chiếu với kết quả kiểm tra thực.
+- [x] M01–M08 được đối chiếu với kết quả kiểm tra thực.
 - [ ] Tài liệu và repo đã cập nhật; báo rõ trạng thái Pages nếu có kiểm tra.
 
 Không còn yêu cầu nghiệm thu ma trận UI cũ, Lighthouse, điện thoại thật, mọi theme/zoom hoặc xuất/phục hồi bản lưu. Không xóa test tính toán để giảm khối lượng UI.
