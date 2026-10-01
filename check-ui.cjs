@@ -27,3 +27,5 @@ assert.equal(UI.decision(comparison(200,100),M.defaults()).kind,'gain');
 assert.equal(UI.decision(comparison(100,200),M.defaults()).kind,'keep');
 assert.equal(UI.decision(comparison(100,99,100),M.defaults()).kind,'uncertain');
 assert.equal(UI.decision(comparison(100,200),{...M.defaults(),prices:{...M.defaults().prices,kimchi:70000}}).kind,'constraint');
+assert.throws(()=>UI.persist(storage,{...M.defaults(),prices:{...M.defaults().prices,tomyum:NaN}},false));
+console.log('PASS: rỗng/step/range, search/lọc và nhánh khuyến nghị tăng/giảm/nhiễu/an toàn.');

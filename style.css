@@ -51,4 +51,4 @@ footer{padding:24px 32px;color:var(--muted);font-size:12px;border-top:1px solid 
 @media(max-width:360px){.fields{grid-template-columns:1fr}.brand{font-size:20px}.resulthead h2{font-size:26px}}
 @media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
 
-@media(max-width:767px){body.editing .calculatebar{display:none}}
+@media(max-width:767px){body.editing .calculatebar{position:static;border:0;padding:0;grid-template-columns:1fr}body.editing .calculatebar nav{display:none}}

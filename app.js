@@ -15,6 +15,7 @@ function restore(storage) {
 function persist(storage, state, recovery) {
  if (recovery) throw Error('Bản lưu cũ chưa đọc được. Tải bản gốc hoặc xác nhận Về LV1 trước khi thay thế.');
  Model.validate(state);
+ for(const item of [...Model.broths,...Model.tops])if(numberError(String(state.prices[item.id]??''),1000,item.base*3,1000))throw Error('Giá chưa hợp lệ: '+item.name);
  storage.setItem(storageKey, JSON.stringify(state));
 }
 function numberError(raw,min,max,step){
@@ -126,10 +127,13 @@ const bar=document.querySelector('.calculatebar');
 function measureBar(){if(bar.getBoundingClientRect().height)document.documentElement.style.setProperty('--bar-height',Math.ceil(bar.getBoundingClientRect().height)+'px');}
 if(typeof ResizeObserver!=='undefined')new ResizeObserver(measureBar).observe(bar);else window.addEventListener('resize',measureBar);
 measureBar();
-function keyboardLayout(){
+let barPointer=false;
+bar.addEventListener('pointerdown',()=>{barPointer=true;});
+document.addEventListener('click',()=>{barPointer=false;keyboardLayout();});
+function keyboardLayout(){if(barPointer)return;
  const editing=document.activeElement?.matches('input[type=number],input[type=search],select');
  const shrunk=window.visualViewport&&window.visualViewport.height<window.innerHeight*.75;
- document.body.classList.toggle('editing',!!editing||!!shrunk);
+ document.body.classList.toggle('editing',window.visualViewport?!!shrunk:!!editing);
 }
 document.addEventListener('focusin',keyboardLayout);document.addEventListener('focusout',()=>queueMicrotask(keyboardLayout));
 window.visualViewport?.addEventListener('resize',keyboardLayout);
