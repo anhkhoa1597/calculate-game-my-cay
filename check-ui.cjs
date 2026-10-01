@@ -22,3 +22,8 @@ assert(UI.menuMatch(M.byId.kimchi,M.defaults(),'available','kim'));
 assert(!UI.menuMatch(M.byId.tomyum,M.defaults(),'available',''));
 assert(UI.menuMatch(M.byId.tomyum,M.defaults(),'all',''));
 assert(!UI.menuMatch(M.byId.bo,M.defaults(),'selling','pho mai'));
+const comparison=(profit,base,se=1)=>({stats:{profit,se},baseline:{profit:base,se}});
+assert.equal(UI.decision(comparison(200,100),M.defaults()).kind,'gain');
+assert.equal(UI.decision(comparison(100,200),M.defaults()).kind,'keep');
+assert.equal(UI.decision(comparison(100,99,100),M.defaults()).kind,'uncertain');
+assert.equal(UI.decision(comparison(100,200),{...M.defaults(),prices:{...M.defaults().prices,kimchi:70000}}).kind,'constraint');
