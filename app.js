@@ -1,9 +1,36 @@
 'use strict';
+const Model = typeof module === 'object' ? require('./engine.js') : M;
+const storageKey = 'mi-cay-planner-v1';
+function restore(storage) {
+ let raw = null;
+ try {
+  raw = storage.getItem(storageKey);
+  if (!raw) return {state:Model.defaults(), raw:null, error:''};
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw Error('Cấu hình không phải đối tượng.');
+  const state = Model.validate({...Model.defaults(), ...parsed, prices:{...Model.defaults().prices, ...parsed.prices}});
+  return {state, raw:null, error:''};
+ } catch (error) { return {state:Model.defaults(), raw, error:error.message}; }
+}
+function persist(storage, state, recovery) {
+ if (recovery) throw Error('Bản lưu cũ chưa đọc được. Tải bản gốc hoặc xác nhận Về LV1 trước khi thay thế.');
+ Model.validate(state);
+ storage.setItem(storageKey, JSON.stringify(state));
+}
+if (typeof module === 'object') module.exports = {restore, persist};
+else init();
+function init() {
+const M = Model;
 const $=id=>document.getElementById(id),money=n=>Math.round(n).toLocaleString('vi-VN')+'đ',num=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:1}),escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const key='mi-cay-planner-v1',numeric=['level','day','stars','reviews','action','extra','decor','buzz','waste'],bool=['pet','dirty','noisy','safe'];
-let state=M.defaults(),result=null,working=false,restoreError='';
-try{const saved=localStorage.getItem(key);if(saved){const parsed=JSON.parse(saved);state=M.validate({...M.defaults(),...parsed,prices:{...M.defaults().prices,...parsed.prices}});}}catch(e){state=M.defaults();restoreError='Không đọc được cấu hình đã lưu; đang dùng LV1. '+e.message;}
-function save(){try{localStorage.setItem(key,JSON.stringify(state));$('saved').textContent='Đã lưu trên máy';}catch(e){$('saved').textContent='Không lưu được';status('Trình duyệt không cho lưu cấu hình. Bạn có thể tải JSON để giữ lại.',true);}}
+const numeric=['level','day','stars','reviews','action','extra','decor','buzz','waste'],bool=['pet','dirty','noisy','safe'];
+let storage;
+try { storage = window.localStorage; } catch (_) { storage = {getItem(){throw Error('Trình duyệt chặn lưu trữ.');},setItem(){throw Error('Trình duyệt chặn lưu trữ.');}}; }
+const restored = restore(storage);
+let state=restored.state,result=null,working=false,restoreError=restored.error,recoveryRaw=restored.raw;
+function save(){
+ try { persist(storage,state,!!restoreError); $('saved').textContent='Đã lưu trên máy'; return true; }
+ catch(error){ $('saved').textContent='Chưa lưu · tải JSON để giữ lại'; $('storage-note').textContent=error.message; return false; }
+}
 function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error);$('mobile-status').textContent=text;$('mobile-status').classList.toggle('error',error);}
 function draw(){
  for(const id of numeric)$(id).value=state[id];for(const id of bool)$(id).checked=state[id];$('event').value=state.event;
@@ -25,7 +52,9 @@ function changed(e){if(working)return;if(e.target.id==='stars'&&Number($('review
  capacity();stale();try{M.validate(state);save();status('Sẵn sàng tính lại.');}catch(err){status(err.message+' Cấu hình chưa hợp lệ nên chưa ghi đè bản đã lưu.',true);}
 }
 $('form').addEventListener('change',changed);$('menurows').addEventListener('change',changed);
-$('reset').onclick=()=>{state=M.defaults();draw();save();stale();status('Đã trở về cấu hình khởi đầu LV1.');};
+$('reset').onclick=()=>{$('reset-confirm').hidden=false;$('cancel-reset').focus();};
+$('cancel-reset').onclick=()=>{$('reset-confirm').hidden=true;$('reset').focus();};
+$('confirm-reset').onclick=()=>{$('reset-confirm').hidden=true;restoreError='';recoveryRaw=null;$('storage-note').textContent='';$('recovery').hidden=true;state=M.defaults();draw();save();stale();status('Đã trở về cấu hình khởi đầu LV1.');};
 $('unlock').onclick=()=>{state.broths=M.broths.filter(x=>x.level<=state.level).map(x=>x.id);state.tops=M.tops.filter(x=>x.level<=state.level).map(x=>x.id);draw();save();stale();};
 $('export').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.href=url;a.download='quan-mi-cay.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 function show(r){const a=r.stats,b=r.baseline,delta=a.profit-b.profit,loss=a.timeout+a.unfinished;
@@ -69,4 +98,8 @@ $('form').onsubmit=async e=>{e.preventDefault();if(working)return;
  finally{working=false;$('controls').disabled=false;$('unlock').disabled=false;$('export').disabled=false;$('results').removeAttribute('aria-busy');}
 };
 $('database').innerHTML=M.data.map(section=>`<details><summary>${escapeHTML(section.title)}</summary><div class="tablewrap"><table><thead><tr>${section.headers.map(x=>`<th>${escapeHTML(x)}</th>`).join('')}</tr></thead><tbody>${section.rows.map(row=>`<tr>${row.map(x=>`<td>${escapeHTML(typeof x==='object'&&x!==null?JSON.stringify(x):x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`).join('');
-draw();if(restoreError)status(restoreError,true);
+draw();
+if(restoreError){$('saved').textContent='Chưa lưu · cần phục hồi';$('storage-note').textContent='Không đọc được bản lưu: '+restoreError+'. Bản gốc được giữ nguyên; đang hiển thị LV1.';$('recovery').hidden=recoveryRaw===null;}
+function download(text,name){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('recovery').onclick=()=>download(recoveryRaw,'quan-mi-cay-ban-goc.json');
+}

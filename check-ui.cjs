@@ -1,0 +1,15 @@
+const assert = require('node:assert/strict');
+const M = require('./engine.js');
+const UI = require('./app.js');
+let raw = JSON.stringify({...M.defaults(),day:12,prices:{...M.defaults().prices,kimchi:41000}});
+const storage = {getItem:()=>raw,setItem:(key,value)=>{assert.equal(key,'mi-cay-planner-v1');raw=value;}};
+const old = UI.restore(storage);
+assert.equal(old.state.day,12);assert.equal(old.state.prices.kimchi,41000);
+UI.persist(storage,old.state,false);
+const valid = raw;
+assert.throws(()=>UI.persist(storage,{...old.state,day:NaN},false));assert.equal(raw,valid);
+raw='{broken';const damaged=UI.restore(storage);assert.equal(damaged.raw,raw);assert(damaged.error);
+assert.throws(()=>UI.persist(storage,M.defaults(),true));assert.equal(raw,'{broken');
+assert.throws(()=>UI.persist({setItem(){throw Error('quota');}},M.defaults(),false),/quota/);
+assert(UI.restore({getItem(){throw Error('denied');}}).error);
+console.log('PASS: restore bản cũ, giá, bản hỏng, bảo vệ bản hợp lệ, lỗi storage.');
