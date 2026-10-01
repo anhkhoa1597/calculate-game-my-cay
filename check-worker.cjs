@@ -5,7 +5,7 @@ const M = require('./engine.js');
 
 async function run(config, id) {
   const messages = [];
-  const context = vm.createContext({setTimeout, postMessage: m => messages.push(JSON.parse(JSON.stringify(m)))});
+  const context = vm.createContext({setTimeout, onmessage:null, postMessage: m => messages.push(JSON.parse(JSON.stringify(m)))});
   context.importScripts = (...paths) => paths.forEach(p => vm.runInContext(fs.readFileSync(p, 'utf8'), context));
   vm.runInContext(fs.readFileSync('worker.js', 'utf8'), context);
   await context.onmessage({data: {id, config}});
