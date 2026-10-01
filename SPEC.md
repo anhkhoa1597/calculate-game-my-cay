@@ -1,279 +1,183 @@
-# Spec: Sổ giá Tiệm Mì Cay
+# Spec: Sổ giá Tiệm Mì Cay — ưu tiên mobile
 
-Trạng thái: đã được người dùng duyệt ngày 02/10/2026; kế hoạch triển khai ở `tasks/plan.md` và `tasks/todo.md`.
-Ngày: 02/10/2026.
-Phạm vi: thiết kế lại trải nghiệm của công cụ hiện có, ưu tiên điện thoại. Đây là một capability giao diện trên bộ tính toán đã có; không chia thành nhiều module hay viết lại engine trong đợt này.
+Cập nhật: 02/10/2026, theo yêu cầu mới của người dùng. Bản này thay thế phạm vi UI/lưu trữ/kiểm thử của spec trước; hợp đồng tính toán vẫn giữ nguyên.
 
-## 1. Mục tiêu
+## 1. Mục tiêu và ưu tiên
 
-Người chơi nhập đúng tình trạng quán, nhận bảng giá dễ áp dụng và hiểu ảnh hưởng tới lợi nhuận, sức phục vụ, khách mất và sao. Người dùng cần quyết định được: nên đổi giá hay giữ giá; quán thiếu khách hay bếp đang quá tải.
+Công cụ tĩnh giúp người chơi nhập tình trạng quán trên điện thoại, tìm bảng giá có lợi nhuận tốt trong các phương án mô phỏng và biết bếp có phục vụ kịp khách hay không.
 
-Thành công không phải chỉ làm giao diện đẹp: người chơi phải nhập được thông số trên điện thoại, xem và dùng giá từng món mà không kéo ngang bảng menu, đọc được giới hạn mô phỏng trước khi tin vào đề xuất.
+Thứ tự ưu tiên:
 
-### Giả định của bản đề xuất
+1. Tính đúng giá, vốn, lợi nhuận và sức phục vụ theo thời gian.
+2. Nhập thông số, chọn món, đọc và dùng giá thuận tiện trên mobile.
+3. Tự nhớ thông số hiện tại để lần sau không nhập lại.
+4. Desktop dùng được cùng chức năng; không cần thiết kế hoặc kiểm thử chi tiết riêng.
 
-- Giữ tên Sổ giá, tiếng Việt, GitHub Pages, HTML/CSS/JavaScript và localStorage.
-- Đây là công cụ tính toán, không phải landing page bán sản phẩm.
-- Giữ dữ liệu game, ý nghĩa thông số, giới hạn giá và hợp đồng kết quả engine hiện tại.
-- Giữ các anchor `shop`, `menu`, `results` và nhãn Quán, Menu, Kết quả.
-- Giữ cấu hình đã lưu; nâng cấp giao diện không reset cấu hình hoặc giá đang nhập.
-- Ưu tiên lợi nhuận một ngày theo mô hình. Không gọi kết quả là tối ưu toàn cục hay cam kết lợi nhuận thực tế.
-- Không thêm tài khoản, backend, đồng bộ đám mây hoặc kết nối tự chỉnh giá trong game.
+Đây là công cụ hỗ trợ chơi game, không phải dashboard quản trị hay hệ thống quản lý dữ liệu. Giữ tên Sổ giá, tiếng Việt và GitHub Pages.
 
-## 2. Kiểm tra giao diện hiện tại
+### Diễn giải phạm vi mới
 
-Nhận định từ source ở commit `b884b07`; chưa có bằng chứng kiểm tra hình ảnh trên trình duyệt thực.
+- “Tìm món” trong luồng tính là nút Tìm giá cho quán. Tìm tên món trong menu chỉ lọc danh sách.
+- Bỏ import JSON. Xuất JSON và phục hồi bản lưu gốc cũng không cần trong luồng sản phẩm gọn này; có thể bỏ các nút/phần xử lý tương ứng đang tồn tại.
+- localStorage là tiện ích phụ. Lỗi lưu không được chặn tìm giá hoặc tạo yêu cầu phục hồi trước khi tiếp tục.
+- Giảm kiểm thử UI, không giảm kiểm thử tính toán hay số ngày mô phỏng.
 
-| Phần | Hiện tại | Hướng xử lý |
-|---|---|---|
-| Nhận diện | Sổ giá / Tiệm Mì Cay, nền giấy sáng, đỏ gạch và xanh | Giữ wordmark và đỏ gạch; dùng màu trung tính cho cấu trúc, màu trạng thái chỉ cho ý nghĩa cụ thể |
-| Typography | System sans; nhiều nhãn và helper nhỏ | Giữ font hệ thống hỗ trợ tiếng Việt, tăng cỡ chữ chức năng |
-| Layout | Desktop hai cột; mobile một cột, form dài trước menu | Dùng nhóm thu gọn, điều hướng rõ, giảm phần giới thiệu trước tác vụ |
-| Menu | 9 nước lèo, 21 topping; mobile mỗi món một khối | Giữ cách nhập từng món; thêm lọc đang bán / có thể mở / tất cả và tìm theo tên |
-| Kết quả | Lợi nhuận, metrics, so sánh dài, giả định ở cuối | Tóm tắt quyết định trước, chi tiết theo nhóm có thể mở |
-| Trạng thái | Chưa tính, thay đổi cấu hình, đang tính, lỗi, đã xong | Giữ đủ chu kỳ; bổ sung lỗi tại ô và xác định kết quả còn phù hợp cấu hình nào |
-| Thanh dưới | Quán / Menu / Kết quả + Tìm giá, safe area | Giữ; kiểm tra bàn phím, zoom, focus và trạng thái tính toán |
-| Lưu cấu hình | Một key localStorage; báo lỗi bằng status | Giữ schema và key; phản ánh lưu thành công / thất bại chính xác |
-| Hiệu năng | Tính trên main thread, dựng toàn bộ bảng tra cứu ngay | Tách tính vào Worker trên HTTP(S); dựng tra cứu khi mở |
-| SEO / điều hướng | Một trang, title hiện có, không có tracking | Giữ URL, title, anchor; không thêm tracking hoặc nội dung SEO giả |
+## 2. Luồng sử dụng trên mobile
 
-### Áp dụng skill có chọn lọc
+### Nhập quán
 
-- Spec-driven-development: tài liệu này là Phase 1 Specify. Chỉ lập kế hoạch và tasks cho thiết kế mới sau khi spec được duyệt. Không ghi đè plan/todo cũ ở giai đoạn này.
-- UI/UX Pro Max: ưu tiên accessibility, touch, responsive, inline validation và progressive disclosure.
-- Design Taste: redesign theo hướng preserve. Chỉ dùng audit, nhất quán màu/chữ/shape và copy đơn giản. Dashboard, bảng dữ liệu và form là ngoài phạm vi của skill này; không áp máy móc quy tắc landing page, ảnh hero, GSAP hay chuyển sang React.
-- Tra cứu `calculator mobile data tool --design-system` trả về mẫu Hero + Features + CTA không phù hợp. Tra cứu hẹp `calculator utility --domain product` không có kết quả. Không lưu mẫu này làm design system. Hướng chức năng trong spec là lựa chọn có lý giải, không phải mẫu database đã khớp.
-- Tra cứu `focus not obscured` và `error summary validation` trả về hướng dẫn đúng cho web: focus không bị UI cố định che và lỗi có liên kết tới ô nhập.
+- Mở trang: đọc cấu hình đã nhớ; chưa có hoặc không đọc được thì dùng cấu hình LV1.
+- Đặt thông số chính lên trước: cấp, ngày, sao, số đánh giá, sự kiện.
+- Tốc độ thao tác và thời gian đọc/chuyển đơn dễ tìm, kèm hướng dẫn ngắn để người chơi đo thực tế. Thời gian luộc được tính riêng.
+- Trang bị, nhân viên và điều kiện bổ sung dùng nhóm thu gọn để trang không quá dài.
+- Không có đánh giá thì dùng 4 sao. Nếu nhập sao khi chưa có đánh giá, giải thích việc dùng xấp xỉ 30 đánh giá.
+- Giảm cấp bỏ lựa chọn không còn đủ cấp và báo ngắn; tăng cấp không tự mua/chọn món.
 
-## 3. Hướng thiết kế
+### Chọn menu
 
-Design Read: công cụ tính giá cho người chơi Việt Nam trên điện thoại, ngôn ngữ trực quan và thực dụng; phát triển giao diện hiện có bằng CSS native.
+- Nhóm nước lèo và topping riêng; mặc định hiện các món có thể mở ở cấp hiện tại.
+- Có lọc Đang bán / Theo cấp / Tất cả và tìm tên có hoặc không dấu.
+- Lọc chỉ thay danh sách nhìn thấy, không xóa giá hoặc lựa chọn.
+- Món khóa ghi Cần LVx. Chọn tất cả theo cấp chỉ chọn món, không chọn trang bị/nhân viên; nhắc người chơi chỉ chọn các món thực sự đã mua mở khóa.
+- Mỗi món là một khối dễ đọc trên mobile: tên, trạng thái bán, vốn, giá hiện tại, giá đề xuất.
+- Giá nền gồm tô + mì + nước lèo. Topping cộng riêng. Giữ bước giá 1.000đ và giới hạn game.
+- Chưa tính ghi Chưa tính; thay thông số thì đề xuất cũ ghi Cần tính lại.
 
-- `DESIGN_VARIANCE: 3`: cấu trúc dễ đoán, không cần bố cục nghệ thuật.
-- `MOTION_INTENSITY: 2`: phản hồi nhấn và chuyển trạng thái nhẹ; không hiệu ứng cuộn trang.
-- `VISUAL_DENSITY: 6`: thông số đủ gần nhau để thao tác, không ép thành cockpit chữ nhỏ.
+### Tìm và dùng giá
 
-### Quy tắc hình ảnh và typography
+- Nút Tìm giá luôn dễ tới; điều hướng Quán / Menu / Kết quả giữ nhãn và anchor hiện có.
+- Khi bấm: kiểm tra đầu vào, nhớ cấu hình hợp lệ và tính trên snapshot đó. Việc lưu thất bại không ngăn tính.
+- HTTP(S) dùng Worker để trang vẫn cuộn và đọc được. Khóa chỉnh cấu hình trong lượt tính, có tiến độ và thông báo lỗi.
+- Kết quả ưu tiên: lợi nhuận/ngày, chênh lệch so với giá hiện tại, số tô thực sự phục vụ, mất vì đầy, hết kiên nhẫn, chưa xong khi đóng và sao cuối ngày.
+- Nói rõ nên thử giá mới, nên giữ giá hoặc chưa đủ bằng chứng. Giá cũ ngoài ràng buộc an toàn phải được giải thích riêng.
+- Lợi nhuận âm, bếp quá tải hoặc sao giảm có cảnh báo ngắn. Không hứa đổi giá luôn tăng lời.
+- Chi tiết thu chi, khách/thời gian chờ, phương án khác, tiêu thụ và giả định đặt trong phần có thể mở.
+- Dùng giá chỉ cập nhật các giá trong công cụ và tự nhớ lại; người chơi tự chỉnh trong game. Sau đó cần tính lại để so với mốc mới.
 
-- Không thêm hero lớn, ảnh trang trí, fake screenshot, marquee hay animation thư viện.
-- Font `system-ui`; số tiền dùng `font-variant-numeric: tabular-nums`.
-- Body và input 16px; helper/metadata tối thiểu 12px; tiêu đề mobile 24-28px, không lấn át form.
-- Spacing theo 4/8px; gutter mobile 16px; desktop max-width 1400px.
-- Radius: input/button 6px, khối chức năng 8px. Không dùng pill cho mọi control.
-- Một accent nhận diện đỏ gạch. Xanh chỉ báo đề xuất/được cải thiện, vàng chỉ cảnh báo, đỏ lỗi; luôn có nội dung chữ đi cùng màu.
-- Semantic tokens cho nền, bề mặt, chữ, helper, đường viền, accent, focus, success, warning, error. Không rải mã màu trong component.
-- Chế độ sáng/tối theo hệ thống, cùng cấu trúc và thương hiệu; không đảo theme riêng từng section. Không cần nút theme thủ công ở đợt này.
-- Nhãn plain text; không cần thư viện icon. Không dùng emoji hoặc ký hiệu trang trí thay nội dung.
-- Primary CTA dùng một nhãn nhất quán: Tìm giá. Nút Dùng giá là hành động khác, cần helper nói rõ chỉ cập nhật công cụ.
+## 3. Giao diện và khả năng sử dụng
 
-## 4. Cấu trúc thông tin và tương tác
+### Mobile là bản chính
 
-### 4.1 Quán
+- Một cột; không kéo ngang toàn trang hoặc bảng menu/kết quả. Bảng data gốc có thể cuộn trong vùng riêng.
+- Giới thiệu ngắn, không hero lớn hoặc nội dung trang trí lấn phần nhập.
+- Chữ nội dung/input khoảng 16px, helper từ 12px; nút/vùng chạm ít nhất 44px, ưu tiên 48px.
+- Thanh dưới tôn trọng safe area và không che ô nhập. Khi bàn phím làm vùng nhìn nhỏ lại có thể thu gọn thanh hoặc đưa về luồng trang.
+- Không giật focus khi đang nhập hoặc tự kéo người đang đọc sang vùng khác lúc tính xong.
+- Dùng label, button, input, details native; lỗi có chữ, không chỉ đổi màu. Không khóa zoom của trình duyệt.
+- Giữ màu nhận diện đỏ gạch, font hệ thống và cấu trúc sáng/tối đang có. Không mở rộng đợt này thành dự án design system.
 
-- Thông số chính: cấp, ngày, sao, số đánh giá, sự kiện.
-- Tốc độ phục vụ có giải thích ngắn và ví dụ cách đo; mở khi lần đầu dùng.
-- Trang bị/nhân viên và điều kiện bổ sung nằm trong nhóm thu gọn; tiêu đề nhóm hiển thị số mục đang dùng hoặc tóm tắt cấu hình.
-- Cấp không đồng nghĩa đã mua mở khóa. Không tự tick toàn bộ món/nâng cấp khi tăng cấp.
-- Giảm cấp phải thông báo những mục không còn hợp lệ. Không âm thầm làm người chơi tưởng cấu hình vẫn đầy đủ.
-- Không có đánh giá: 4 sao. Khi người dùng nhập sao nhưng chưa nhập số đánh giá, giải thích lựa chọn xấp xỉ 30 đánh giá.
-- Giây/thao tác và thời gian đọc/chuyển khách giữ tách biệt với luộc; chữ hướng dẫn không gọi pipeline lý tưởng là tốc độ thực tế đã đo.
+### Desktop là bản phụ
 
-### 4.2 Menu
+- Dùng cùng nội dung và chức năng, giới hạn chiều rộng để đọc thuận tiện.
+- Một cột hoặc hai cột đều được nếu dùng được và không tràn trang.
+- Không yêu cầu bố cục riêng, biểu đồ riêng, breakpoint chi tiết hoặc tối ưu pixel cho từng độ rộng máy tính.
 
-- Nhóm Nước lèo và Topping; hiển thị số món đang bán.
-- Bộ lọc mặc định Có thể mở theo cấp; tùy chọn Đang bán và Tất cả. Giữ thứ tự gốc trong từng nhóm.
-- Tìm kiếm không dấu, không phân biệt hoa thường; không đổi lựa chọn khi lọc.
-- Món chưa đến cấp có nhãn Cần LVx và thao tác disabled khi xem Tất cả.
-- Mỗi món thể hiện: tên, đang bán, cấp/phí mở, vốn, giá hiện tại, giá đề xuất.
-- Nước lèo: vốn hiển thị đã cộng tô 1.500đ và mì 3.000đ. Topping: vốn riêng của topping.
-- Giá hiện tại nhập bằng bàn phím số; bước 1.000đ, giới hạn game. Không tự làm tròn một giá sai rồi lưu mà không báo.
-- Giá đề xuất chưa có: Chưa tính. Kết quả hết hiệu lực: Cần tính lại.
-- Chọn tất cả theo cấp chỉ chọn món, có helper giải thích phải thực sự đã mua mở; không chọn trang bị/nhân viên.
-- Giữ tối thiểu một nước lèo hoặc báo lỗi cụ thể tại nhóm trước khi tính.
+## 4. Tự nhớ thông số — đơn giản và không chặn tác vụ
 
-### 4.3 Tìm giá và kết quả
+- Giữ key `mi-cay-planner-v1` và cấu trúc cấu hình hiện có khi còn hợp lệ.
+- Tự lưu khi cập nhật thông số quán, chọn/bỏ món, chỉnh giá, trang bị/nhân viên; lưu lại khi bấm Tìm giá hoặc Dùng giá.
+- Chỉ ghi cấu hình hợp lệ. Ô rỗng hoặc giá sai trong lúc nhập không biến thành 0/NaN rồi ghi đè cấu hình hợp lệ trước đó.
+- Reload khôi phục thông số và bảng giá đã lưu; không cần lưu kết quả mô phỏng, lịch sử, nhiều hồ sơ hoặc trạng thái bộ lọc.
+- localStorage không khả dụng: vẫn nhập và tính bình thường; chỉ báo ngắn rằng thông số có thể không được nhớ sau reload. Không báo Đã lưu khi thực tế chưa lưu.
+- Bản lưu hỏng/không tương thích: dùng LV1, báo ngắn và cho cấu hình hợp lệ mới thay thế khi cập nhật/tìm giá. Không giữ raw để xuất, không màn phục hồi, không khóa lưu chờ xác nhận.
+- Không có import/export JSON, đồng bộ, backup hay quản lý phiên bản dữ liệu.
+- Về LV1 có xác nhận gọn để tránh bấm nhầm; không cần hệ thống hoàn tác.
 
-1. Kiểm tra form, đọc một snapshot cấu hình hợp lệ, rồi chạy bộ tìm giá.
-2. Trong lúc tính: báo tiến độ bằng chữ; giữ điều hướng và cuộn phản hồi được. Không ghi kết quả của một snapshot lên cấu hình khác.
-3. Kết quả đầu tiên: lợi nhuận/ngày, chênh lệch so với giá hiện tại, sức phục vụ và mất khách. Không cần mở chi tiết để thấy giá đề xuất từng món.
-4. Hàng cảnh báo ngắn theo dữ liệu: quá tải, sao giảm hoặc chênh lệch chưa đủ chắc chắn.
-5. Chi tiết mở theo nhóm: thu/chi; khách & sức bếp; phương án khác; nguyên liệu tiêu thụ; giả định mô phỏng.
-6. Dùng giá chỉ lưu giá vào công cụ; không tự gửi vào game. Sau đó lấy giá mới làm mốc so sánh và yêu cầu tính lại.
+## 5. Hợp đồng tính toán
 
-Phải phân biệt các trường hợp:
+Giữ `engine.js`, `game-data.js`, `M.validate`, `M.optimize`, `M.batch`, `M.simulate`, catalog, seed và số lượt kiểm chứng hiện tại. UI không viết một công thức lợi nhuận khác.
 
-| Tình huống | Nội dung cần thể hiện |
-|---|---|
-| Lợi nhuận đề xuất cao hơn và chênh lệch rõ | Có thể thử giá này, kèm số chênh lệch và rủi ro |
-| Chênh lệch nằm trong nhiễu | Chưa đủ bằng chứng tốt hơn; cân nhắc giữ giá hiện tại |
-| Lợi nhuận đề xuất thấp hơn | Không gợi ý tăng lời; nêu rõ chênh lệch âm và điều kiện tìm giá |
-| Giá hiện tại bị chê đắt nhưng chế độ an toàn đang bật | Hai phương án khác điều kiện; giải thích lợi nhuận có thể thấp hơn để tránh phạt giá |
-| Bếp quá tải | Nêu số nhóm/đơn hết kiên nhẫn, chưa xong, mất vì đầy; không gộp thành một số khách thiếu giải thích |
-| Sao cuối ngày giảm | Cảnh báo tác động tới những ngày sau; không coi tối ưu hôm nay là tối ưu dài hạn |
+- Vốn tô = 1.500đ tô + 3.000đ mì + vốn nước lèo + vốn topping.
+- Thu hút phụ thuộc giá mì trung bình, sao, ngày, trang bị, buzz, sự kiện và điều kiện quán.
+- Giá topping không đổi xác suất chọn topping; giá cao vẫn có thể gây từ chối hoặc trừ sao.
+- Mô phỏng bàn, nhóm khách, app, kiên nhẫn, nồi chạy song song, thời gian thao tác, 210 giây nhận khách và tối đa 60 giây phục vụ nốt.
+- Lợi nhuận gồm vốn, phí app, tip, thuê nhà, điện/nước, điện trang bị, lương và hao hụt.
+- “Tốt nhất” chỉ trong tập bảng giá đã thử, theo mục tiêu lợi nhuận một ngày; không chứng minh tối ưu toàn cục hoặc dài hạn.
+- Khoảng tin cậy chỉ phản ánh ngẫu nhiên mô phỏng, không bao gồm sai số tốc độ và cơ chế chưa mô phỏng.
+- Data vẫn là snapshot 27/09/2026. Giữ giải thích giới hạn về thiếu hàng, nhiệm vụ/thưởng, drama, giao xa, mặc cả, công thức bí truyền, du lịch, phản hồi review, lên cấp giữa ngày và phí đầu tư.
+- File trực tiếp có fallback tính trên main thread và báo có thể chậm. Worker lỗi trả trang về trạng thái có thể dùng lại; không tự nhận kết quả của snapshot khác.
 
-Số tô khác số nhóm/đơn. Bảng tiêu thụ là trung bình phần đã giao, không phải lượng tồn chắc chắn đủ. Khoảng tin cậy là nhiễu mô phỏng, không bao gồm sai số mô hình.
+## 6. Stack, cấu trúc và code style
 
-### 4.4 Lưu và lỗi
-
-- Cấu hình hợp lệ được tự lưu; refresh giữ cấu hình và giá.
-- Input đang sai không ghi đè cấu hình hợp lệ gần nhất. Giá `0`, rỗng và NaN không được âm thầm đổi thành giá hợp lệ.
-- Lỗi tại ô: nội dung ngắn, `aria-invalid`, liên kết helper/error bằng `aria-describedby`.
-- Submit sai: error summary có thể focus, liên kết từng lỗi tới control. Không đổi focus trên mỗi keystroke.
-- Lưu thất bại: không hiển thị Đã lưu; thông báo trạng thái chưa lưu và cho xuất JSON.
-- Cấu hình hỏng/không tương thích: thông báo và giữ bản lưu gốc để phục hồi; không overwrite ngay khi tải trang.
-- Khi đổi cấu hình, đánh dấu kết quả cần tính lại; không hiển thị bảng giá cũ như đề xuất còn hợp lệ.
-- Nút Về LV1 phải tránh xóa nhầm cấu hình đang dùng: xác nhận trong UI hoặc có hoàn tác rõ ràng. Đây là yêu cầu sản phẩm, không phải xin quyền thực thi của agent.
-
-### 4.5 Mobile và desktop
-
-- 320-767px: một cột, menu thành khối món; giá hiện tại và giá đề xuất đặt cạnh nhau khi đủ chỗ, xếp dọc ở 320px nếu cần.
-- 768-1023px: một cột rộng hoặc hai cột chỉ khi mỗi vùng đủ rộng, không ép bảng tràn.
-- Từ 1024px: thông số bên trái, vùng làm việc bên phải. Menu và kết quả nằm gần nhau, các chi tiết không lấn nội dung chính.
-- Thanh mobile giữ Quán / Menu / Kết quả + Tìm giá; mỗi target ít nhất 44×44px, ưu tiên control 48px và khoảng cách 8px.
-- Thanh cố định phải tôn trọng safe area. Chiều cao vùng bù được đo theo thanh thực tế, không dựa vào một con số giả định nếu status dài.
-- Khi bàn phím mở: input đang focus, lỗi và nút Done của hệ thống không bị thanh che. Thu gọn/ẩn thanh hoặc chuyển về flow nếu cần.
-- Zoom 200%, màn hình ngang và tăng cỡ chữ không làm nội dung bị cắt. Không dùng `maximum-scale`/`user-scalable=no`.
-- Focus sau tính xong chuyển tới tiêu đề kết quả; tránh tự cuộn bất ngờ khi người dùng đã chuyển sang đọc vùng khác. Không lấy focus khi đang nhập.
-- Toàn trang không cuộn ngang. Bảng data gốc được phép cuộn riêng, có nhãn vùng và hint, không kéo theo trang.
-
-## 5. Hợp đồng tính toán giữ nguyên
-
-`M.validate`, `M.defaults`, `M.optimize`, `M.batch`, `M.simulate`, catalog và schema kết quả là nguồn hiện có. Giao diện không tự tạo một công thức lợi nhuận thứ hai.
-
-- Giá nền và topping tách riêng; vốn tô = 1.500 + 3.000 + vốn nước lèo + vốn topping.
-- Thu hút theo tỷ lệ giá mì trung bình, sao, trang bị, ngày, buzz và sự kiện. Giá topping không đổi xác suất chọn topping, nhưng có thể gây từ chối và trừ sao.
-- Chờ khách, bàn, app, thời gian luộc, thao tác, 210 giây/ngày và overtime tối đa 60 giây phải giữ trong mô phỏng.
-- Giữ lương, điện trang bị, thuê nhà, phí app, tip, hao hụt trong lợi nhuận.
-- Giữ seed tái lập và seed kiểm chứng khác tập tìm giá; không thay sample count chỉ để làm kết quả đẹp.
-- Chế độ tránh bị chê đắt phải nói rõ đây là ràng buộc của tìm giá, không hứa tránh mọi đánh giá xấu.
-- Vẫn dùng dữ liệu snapshot 27/09/2026. Công thức có thể thay đổi khi game cập nhật.
-- Tiếp tục công khai những cơ chế chưa mô phỏng: thiếu hàng, drama/đổi yêu cầu, giao xa, mặc cả, công thức bí truyền, khách du lịch, lên cấp giữa ngày, nhiệm vụ, phản hồi review và phí đầu tư.
-- Nếu cần sửa sai mô hình trong quá trình kiểm tra, ghi thành vấn đề riêng và cập nhật spec trước khi mở rộng phạm vi.
-
-## 6. Stack và cấu trúc dự án
-
-Giữ HTML5, CSS native, JavaScript chạy trực tiếp. Không có build, npm dependency hoặc yêu cầu bundler. Worker là API trình duyệt, không phải thư viện.
+HTML/CSS/JavaScript native, localStorage, Worker; không thêm dependency, bundler hoặc backend.
 
 ```text
-index.html       Markup, form và vùng kết quả
-style.css        Tokens, responsive và trạng thái sáng/tối
-app.js           Form, validation UI, localStorage, render, điều phối tính
-engine.js        Mô phỏng và tìm giá hiện tại
-worker.js        Dự kiến: nhận snapshot, trả progress/result/error trên HTTP(S)
-game-data.js     Catalog và bảng trích từ game
-check.cjs        Kiểm tra logic hiện có bằng Node assert
-README.md        Hướng dẫn chạy, Pages và giới hạn mô hình
-SPEC.md          Spec này
-tasks/plan.md    Plan hiện có; cập nhật sau khi spec được duyệt
-tasks/todo.md    Tasks hiện có; cập nhật sau khi spec được duyệt
+index.html       Form, menu và kết quả
+style.css        Bố cục ưu tiên mobile, trạng thái, màu sáng/tối
+app.js           Nhập liệu, tự nhớ, lọc menu, hiển thị và điều phối tính
+worker.js        Snapshot → tiến độ/kết quả/lỗi
+engine.js        Mô phỏng/tìm giá, giữ nguyên
+game-data.js    Catalog và 21 bảng trích game
+check.cjs        Kiểm tra tính toán bằng Node assert
+check-worker.cjs Đối chiếu Worker với engine
+check-ui.cjs     Kiểm tra logic UI có ý nghĩa, không dựng bộ test layout lớn
+README.md        Hướng dẫn chạy và giới hạn
+tasks/plan.md    Thứ tự chỉnh phần còn lại
+tasks/todo.md    Checklist theo phạm vi mới
 ```
 
-Worker chạy trên GitHub Pages/localhost với đường dẫn tương đối. Khi mở `file://` mà Worker không hoạt động, giữ fallback engine trực tiếp cùng kết quả và báo hạn chế phản hồi; không hứa INP giống bản HTTP(S).
-
-## 7. Lệnh thực thi
-
-Chạy tại thư mục dự án:
-
-```sh
-cd /Users/khoadanganh/Documents/Codex/mi-cay-planner
-python3 -m http.server 8765 --bind 127.0.0.1
-# Mở http://127.0.0.1:8765
-
-node check.cjs
-node --check app.js
-node --check engine.js
-# Sau khi worker.js tồn tại:
-node --check worker.js
-
-git diff --check
-git status --short
-```
-
-Build: không cần, GitHub Pages phục vụ file gốc. Lint: `git diff --check` chỉ kiểm tra whitespace, không thay thế lint JavaScript. Kiểm tra cú pháp dùng `node --check`; không thêm linter chỉ cho đợt UI này.
-
-## 8. Code style
-
-- Tên biến/function camelCase; CSS class kebab-case; semantic tokens ở `:root`.
-- Format file đang chỉnh cho dễ đọc, không gom toàn bộ CSS hoặc function thành một dòng.
-- DOM động phải dùng `textContent` cho dữ liệu người dùng; markup từ template phải escape dữ liệu đúng ngữ cảnh.
-- Dùng native `button`, `label`, `input`, `details`, `table`; không thay control bằng div clickable.
-- Logic mô phỏng ở engine; logic trình bày/lưu ở app. Worker không sửa trạng thái UI hoặc localStorage.
-
-Ví dụ quy ước trạng thái lưu:
+Tên JavaScript camelCase, CSS kebab-case. Dùng API có sẵn, escape dữ liệu khi dựng markup. Lưu chỉ là một thao tác best-effort:
 
 ```js
-function saveSettings(settings) {
+function rememberSettings(settings) {
   try {
     localStorage.setItem(storageKey, JSON.stringify(settings));
-    setSaveStatus('Đã lưu');
     return true;
   } catch {
-    setSaveStatus('Chưa lưu được. Hãy tải cấu hình JSON.');
     return false;
   }
 }
 ```
 
-## 9. Kiểm thử và bằng chứng
+Caller kiểm tra cấu hình trước khi lưu; nếu hàm trả false vẫn tiếp tục tính giá.
 
-Không yêu cầu tỷ lệ coverage giả hoặc framework mới. Dùng Node assert cho logic; trình duyệt thực cho layout, nhập liệu, keyboard và localStorage.
+## 7. Lệnh và chiến lược kiểm thử vừa đủ
 
-| Lớp | Trường hợp cần kiểm chứng |
-|---|---|
-| Hồi quy engine | Công thức thu hút, ngưỡng giá, vốn/lợi nhuận, seed, quán quá tải, công suất |
-| Worker | Cùng cấu hình/seed cho kết quả như engine trực tiếp; lỗi trả về rõ; kết quả không áp nhầm snapshot |
-| Form/lưu | Input sai không ghi đè; storage thất bại; reload; giảm cấp; chọn món; lọc không mất giá |
-| Kết quả | Lợi nhuận âm, chênh lệch nhỏ, quá tải, sao giảm, giá cũ không đạt ràng buộc an toàn |
-| Responsive | 320, 375, 390, 768, 1024, 1440px; portrait/landscape; bàn phím số; zoom 200% |
-| Accessibility | Tab/Shift+Tab, focus/error summary, nhãn, live status, contrast, reduced motion, light/dark |
-| Hiệu năng | Lighthouse mobile trên HTTP(S); trace khi tìm giá và kiểm tra thao tác/cuộn không bị khóa |
+```sh
+cd /Users/khoadanganh/Documents/Codex/mi-cay-planner
+python3 -m http.server 8765 --bind 127.0.0.1
 
-Mục tiêu hiệu năng trên HTTP(S): LCP < 2,5s, CLS < 0,1 và INP < 200ms. Đây là mục tiêu phải đo với cấu hình kiểm thử ghi rõ, không coi là kết quả đã đạt. Không đặt deadline chạy tối ưu trên mọi điện thoại; luôn có tiến độ, giao diện phản hồi và kết quả/lỗi rõ.
+node check.cjs
+node check-worker.cjs
+node check-ui.cjs
+node --check app.js
+node --check engine.js
+node --check worker.js
+git diff --check
+```
 
-Trình duyệt phải kiểm tra ít nhất Safari iOS và Chrome Android cho bàn phím/safe area; Chrome desktop cho keyboard và zoom. Nếu không có kết nối trình duyệt/thiết bị, đánh dấu chưa kiểm chứng và không báo đã hoàn thành kiểm tra UI.
+Không cần build. Không thêm framework test hoặc yêu cầu tỷ lệ coverage.
 
-## 10. Ranh giới
+### Kiểm tra bắt buộc
 
-### Luôn làm
+- Engine: thu hút, ngưỡng giá, vốn/lợi nhuận, seed tái lập, sức phục vụ/quá tải.
+- Worker: kết quả khớp engine với đầu vào LV1/LV9, progress/request id/lỗi.
+- Logic UI: rỗng/range/step, lọc không mất lựa chọn/giá, nội dung khuyến nghị đúng khi tăng/giảm/nhiễu/ràng buộc an toàn.
+- Một lượt smoke test mobile khoảng 390px: nhập → chọn/lọc → tìm giá → đọc → dùng giá → reload. Liếc nhanh 320px để bắt tràn hoặc nút khó chạm.
+- Một lượt mở desktop để xác nhận trang dùng được, không cần ma trận desktop.
+- Lưu: chỉ kiểm tra auto-save/reload thông thường và việc không chặn tính nếu lưu lỗi. Không đầu tư vào hàng loạt tình huống phục hồi dữ liệu.
 
-- Giữ cấu hình hiện có và hợp đồng tính toán; validate trước lưu/tính.
-- Dùng đường dẫn tương đối tương thích repo Pages.
-- Đo contrast: chữ thường ≥4,5:1; control/focus có độ tương phản đủ, không dựa vào màu riêng.
-- Kiểm tra trạng thái chưa có dữ liệu, đang tính, lỗi, đã xong và kết quả hết hiệu lực.
-- Chạy kiểm tra liên quan trước commit và ghi rõ hạn chế bằng chứng.
+### Không phải điều kiện chặn hoàn thành
 
-### Trao đổi trước khi mở rộng
+Không bắt buộc ma trận 6 độ rộng, thử mọi theme/zoom/hướng màn hình, kiểm thử thiết bị Safari iOS/Chrome Android thật, Lighthouse hoặc đo chỉ số web vitals. Không bắt buộc ảnh bằng chứng cho từng trạng thái UI. Giữ các kiểm tra thực đã làm làm tham khảo; không lặp lại khi không có thay đổi liên quan.
 
-- Thay thuật toán/mục tiêu lợi nhuận, thêm cơ chế game hoặc cập nhật snapshot data.
-- Thêm dependency/build/backend, đổi schema localStorage hoặc tự đổi thương hiệu.
-- Đổi route, nhãn điều hướng chính, tên/order trường hoặc bỏ tính năng hiện có.
-- Bật tracking, lưu dữ liệu ra ngoài máy hoặc thao tác tự động trong game.
+Ghi trung thực cái đã kiểm tra; không nói đã test điện thoại thật hoặc chứng minh tối ưu toàn cục khi chưa làm.
 
-### Không làm
+## 8. Ranh giới
 
-- Hứa tối ưu tuyệt đối hoặc trộn số minh họa với số mô phỏng thật.
-- Gắn thông báo Đã lưu khi lưu thất bại; xóa bản lưu hỏng trước khi có phương án phục hồi.
-- Để giá cũ trông như đề xuất hợp lệ sau khi cấu hình đã đổi.
-- Cắt sample count, bỏ kiểm tra hoặc giấu hạn chế để đạt cảm giác nhanh/chính xác.
-- Commit secret, thêm hiệu ứng/ảnh không phục vụ công việc tính giá.
+- Luôn: ưu tiên mobile; validate trước tính/lưu; giữ engine/data/sample count; lỗi lưu không chặn tính; kiểm tra logic liên quan trước commit.
+- Trao đổi trước: thay thuật toán/data/mục tiêu tối ưu, thêm dependency/backend/tracking hoặc tự thao tác game.
+- Không: thêm import JSON, luồng phục hồi/backup phức tạp, thiết kế desktop cầu kỳ, mở rộng kiểm thử UI thành điều kiện phát hành không cần thiết, báo lưu/tính thành công khi thất bại, commit secret.
 
-## 11. Tiêu chí nghiệm thu
+## 9. Tiêu chí nghiệm thu
 
-- [ ] AC01: Cấu hình từ bản `b884b07` mở ở bản mới giữ nguyên lựa chọn và giá.
-- [ ] AC02: Người dùng LV1 và người dùng mở đủ 9 nước lèo cấu hình được quán mà không nhầm cấp với đã mua.
-- [ ] AC03: Menu và bảng so sánh không yêu cầu kéo ngang ở 320px; data gốc chỉ cuộn trong vùng riêng.
-- [ ] AC04: Control đủ lớn, bàn phím không che ô đang nhập; thanh dưới không che nội dung/focus ở zoom 200%.
-- [ ] AC05: Giá sai, không có nước lèo và prerequisite sai được chỉ đúng vị trí; bản đã lưu hợp lệ không bị ghi đè.
-- [ ] AC06: Lọc/tìm món giữ nguyên cấu hình, giá đang nhập và đề xuất hợp lệ.
-- [ ] AC07: Người dùng nhìn được lợi nhuận, chênh lệch, số tô, các loại mất khách và cảnh báo sao mà không mở phần công thức.
-- [ ] AC08: Không dùng lời khẳng định tăng lời khi đề xuất kém hơn hoặc chênh lệch chưa đủ bằng chứng.
-- [ ] AC09: Tính trên Worker và engine trực tiếp cho cùng kết quả với cùng đầu vào/seed; trang HTTP(S) vẫn cuộn/điều hướng trong lúc tính.
-- [ ] AC10: Lưu thất bại báo đúng; refresh cấu hình hợp lệ hoạt động; reset tránh mất cấu hình do bấm nhầm.
-- [ ] AC11: Light/dark, keyboard, reduced motion và contrast có bằng chứng kiểm tra thực.
-- [ ] AC12: Tất cả Node checks và syntax checks liên quan qua; giới hạn mô hình và tiêu chí chưa đo được ghi trung thực.
+- [ ] M01: Luồng nhập quán → chọn món → tìm giá → dùng giá dễ thao tác trên mobile; menu/kết quả không tràn ngang.
+- [ ] M02: Giá và lựa chọn không mất khi tìm/lọc; món khóa và giá nền/topping được giải thích đúng.
+- [ ] M03: Kết quả thể hiện lợi nhuận, chênh lệch, tô phục vụ, các loại mất khách và sao; không hứa tăng lời nếu bằng chứng không đủ.
+- [ ] M04: Thông số hợp lệ tự nhớ khi chỉnh/tìm giá/dùng giá, reload giữ lại; lưu lỗi không cản nhập/tính.
+- [ ] M05: Không import/export JSON hoặc yêu cầu phục hồi dữ liệu; cấu hình hỏng trở về mặc định và tiếp tục dùng được.
+- [ ] M06: Worker và engine khớp; thuật toán, catalog và số lượt mô phỏng không bị giảm để làm UI nhanh giả.
+- [ ] M07: Desktop dùng được cùng chức năng, không cần thiết kế chi tiết riêng.
+- [ ] M08: Checks logic/cú pháp liên quan và smoke test mobile qua; README nêu đúng phạm vi/giới hạn.
 
-## 12. Quyết định đã duyệt
-
-Bản đề xuất mặc định giữ nhận diện và stack, thêm lọc menu, inline validation, dark mode theo hệ thống và Worker để giao diện phản hồi khi tính. Mục tiêu tối ưu vẫn là lợi nhuận một ngày.
-
-Người dùng đã duyệt spec. Bước tiếp theo là duyệt kế hoạch/tasks trước khi triển khai theo workflow đã chọn. Những yêu cầu trong tài liệu là mục tiêu của đợt tiếp theo, không phải mô tả rằng code hiện tại đã đáp ứng.
+Không có câu hỏi sản phẩm bắt buộc còn thiếu. Những yêu cầu UI/storage/test cũ trái bản này được thay thế theo chỉ đạo mới của người dùng.
