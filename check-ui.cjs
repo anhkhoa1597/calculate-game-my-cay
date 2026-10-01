@@ -17,3 +17,8 @@ assert(UI.numberError('',1,10,1));assert(UI.numberError('0',1,10,1));
 assert(UI.numberError('1.5',1,10,1));assert.equal(UI.numberError('0',0,30,1),'');
 assert(UI.numberError('500',1000,105000,1000));assert(UI.numberError('35500',1000,105000,1000));
 assert.equal(UI.numberError('.45',.05,10,.05),'');
+assert.equal(UI.searchText('PHÔ MAI ĐỎ'),'pho mai do');
+assert(UI.menuMatch(M.byId.kimchi,M.defaults(),'available','kim'));
+assert(!UI.menuMatch(M.byId.tomyum,M.defaults(),'available',''));
+assert(UI.menuMatch(M.byId.tomyum,M.defaults(),'all',''));
+assert(!UI.menuMatch(M.byId.bo,M.defaults(),'selling','pho mai'));

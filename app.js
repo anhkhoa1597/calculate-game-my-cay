@@ -25,7 +25,9 @@ function numberError(raw,min,max,step){
  if(Math.abs(ticks-Math.round(ticks))>1e-7)return `Nhập theo bước ${step.toLocaleString('vi-VN')}.`;
  return '';
 }
-if (typeof module === 'object') module.exports = {restore, persist, numberError};
+function searchText(value){return value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().trim();}
+function menuMatch(item,state,filter,query){return (filter==='all'||filter==='available'&&item.level<=state.level||filter==='selling'&&[...state.broths,...state.tops].includes(item.id))&&searchText(item.name).includes(searchText(query));}
+if (typeof module === 'object') module.exports = {restore, persist, numberError, searchText, menuMatch};
 else init();
 function init() {
 const M = Model;
@@ -34,7 +36,7 @@ const numeric=['level','day','stars','reviews','action','extra','decor','buzz','
 let storage;
 try { storage = window.localStorage; } catch (_) { storage = {getItem(){throw Error('Trình duyệt chặn lưu trữ.');},setItem(){throw Error('Trình duyệt chặn lưu trữ.');}}; }
 const restored = restore(storage);
-let state=restored.state,result=null,working=false,restoreError=restored.error,recoveryRaw=restored.raw;
+let state=restored.state,result=null,working=false,restoreError=restored.error,recoveryRaw=restored.raw,hasCalculated=false;
 function save(){
  try { persist(storage,state,!!restoreError); $('saved').textContent='Đã lưu trên máy'; return true; }
  catch(error){ $('saved').textContent='Chưa lưu · tải JSON để giữ lại'; $('storage-note').textContent=error.message; return false; }
@@ -43,9 +45,21 @@ function status(text,error=false){$('status').textContent=text;$('status').class
 function draw(){
  for(const id of numeric)$(id).value=state[id];for(const id of bool)$(id).checked=state[id];$('event').value=state.event;
  for(const [kind,catalog] of [['upgrades',M.upgrades],['staff',M.staff]])$(kind).innerHTML=catalog.map(x=>`<label class="check"><input type="checkbox" data-kind="${kind}" value="${x.id}" ${state[kind].includes(x.id)?'checked':''} ${x.level>state.level?'disabled':''}><span>${escapeHTML(x.name)} <small>LV${x.level} · ${money(x.daily)} / ngày${kind==='upgrades'?' · mua '+money(x.cost):''}<br>${escapeHTML(x.hint)}</small></span></label>`).join('');
- $('menurows').innerHTML=[['NƯỚC LÈO',M.broths,'broths'],['TOPPING',M.tops,'tops']].map(([title,catalog,kind])=>`<tr class="category" role="row"><td role="cell" colspan="4">${title}</td></tr>`+catalog.map(x=>`<tr role="row"><td role="cell"><label class="check"><input type="checkbox" data-kind="${kind}" value="${x.id}" ${state[kind].includes(x.id)?'checked':''} ${x.level>state.level?'disabled':''}><span>${escapeHTML(x.name)}<small>LV${x.level}${x.unlock?' · mở '+money(x.unlock):' · có sẵn'}</small></span></label></td><td role="cell" data-label="Vốn / phần">${money(x.cost+(kind==='broths'?4500:0))}</td><td role="cell" data-label="Giá hiện tại (đ)"><input type="number" inputmode="numeric" aria-label="Giá hiện tại ${escapeHTML(x.name)}" data-price="${x.id}" min="1000" max="${x.base*3}" step="1000" value="${state.prices[x.id]}" ${!state[kind].includes(x.id)?'disabled':''}></td><td role="cell" data-label="Đề xuất (đ)" class="recommend" data-recommend="${x.id}">—</td></tr>`).join('')).join('');
- capacity();
+ $('menurows').innerHTML=[['NƯỚC LÈO',M.broths,'broths'],['TOPPING',M.tops,'tops']].map(([title,catalog,kind])=>`<tr class="category" role="row"><td role="cell" colspan="4" data-count="${kind}">${title}</td></tr>`+catalog.map(x=>`<tr role="row" data-item="${x.id}"><td role="cell"><label class="check"><input type="checkbox" data-kind="${kind}" value="${x.id}" ${state[kind].includes(x.id)?'checked':''} ${x.level>state.level?'disabled':''}><span>${escapeHTML(x.name)}<small>${x.level>state.level?'Cần LV'+x.level:'LV'+x.level}${x.unlock?' · mở '+money(x.unlock):' · có sẵn'}</small></span></label></td><td role="cell" data-label="Vốn / phần">${money(x.cost+(kind==='broths'?4500:0))}</td><td role="cell" data-label="Giá hiện tại (đ)"><input type="number" inputmode="numeric" aria-label="Giá hiện tại ${escapeHTML(x.name)}" data-price="${x.id}" min="1000" max="${x.base*3}" step="1000" value="${state.prices[x.id]}" ${!state[kind].includes(x.id)?'disabled':''}></td><td role="cell" data-label="Đề xuất (đ)" class="recommend" data-recommend="${x.id}">${result&&state[kind].includes(x.id)?money(result.prices[x.id]):hasCalculated?'Cần tính lại':'Chưa tính'}</td></tr>`).join('')).join('');
+ filterMenu();capacity();
 }
+function filterMenu(){
+ const filter=$('menu-filter').value,query=$('menu-search').value;
+ let total=0;
+ for(const [kind,catalog,title] of [['broths',M.broths,'NƯỚC LÈO'],['tops',M.tops,'TOPPING']]){
+  let count=0;
+  for(const item of catalog){const visible=menuMatch(item,state,filter,query);document.querySelector(`[data-item="${item.id}"]`).hidden=!visible;if(visible)count++;}
+  document.querySelector(`[data-count="${kind}"]`).textContent=`${title} · ${count}/${catalog.length} hiện · ${state[kind].length} đang bán`;
+  total+=count;
+ }
+ $('menu-empty').hidden=total>0;
+}
+$('menu-filter').onchange=filterMenu;$('menu-search').oninput=filterMenu;
 function capacity(){const cycle=state.upgrades.includes('fire')?4.2:5.2,pots=state.upgrades.includes('pot3')?3:state.upgrades.includes('pot2')?2:1;
  $('capacity').textContent=`${state.upgrades.includes('seat4')?4:3} bàn · ${pots} nồi luộc · mì chín khoảng ${num(cycle*(state.staff.includes('boil')?.64:.6))} giây. Giảm thời gian thao tác giúp bếp theo kịp khách.`;
 }
@@ -73,17 +87,17 @@ function validateInputs(focus=false){
  if(errors.length&&focus)$('errors').focus();
  return !errors.length;
 }
-$('errors').onclick=e=>{const link=e.target.closest('a');if(!link)return;e.preventDefault();const el=$(link.hash.slice(1));for(let parent=el.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;el.focus();el.scrollIntoView({block:'center'});};
-function stale(){result=null;$('results').innerHTML='<div class="stale">Thông số đã thay đổi. Bấm “Tìm giá cho quán” để tính lại.</div>';for(const el of document.querySelectorAll('[data-recommend]'))el.textContent='—';}
+$('errors').onclick=e=>{const link=e.target.closest('a');if(!link)return;e.preventDefault();const el=$(link.hash.slice(1));if(el.dataset.price){$('menu-filter').value='all';$('menu-search').value='';filterMenu();}for(let parent=el.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;el.focus();el.scrollIntoView({block:'center'});};
+function stale(){hasCalculated=true;result=null;$('results').innerHTML='<div class="stale">Thông số đã thay đổi. Bấm “Tìm giá cho quán” để tính lại.</div>';for(const el of document.querySelectorAll('[data-recommend]'))el.textContent='Cần tính lại';}
 function changed(e){if(working)return;if(e.target.id==='stars'&&$('reviews').value==='0'){$('reviews').value=30;$('reviews-note').textContent='Đã dùng xấp xỉ 30 đánh giá ở mức sao vừa nhập.';}state=read();
  if(e.target.id==='level'&&Number.isInteger(state.level)&&state.level>=1&&state.level<=10){const previous=[...state.broths,...state.tops,...state.upgrades,...state.staff];for(const [kind,catalog] of [['broths',M.broths],['tops',M.tops],['upgrades',M.upgrades],['staff',M.staff]])state[kind]=state[kind].filter(id=>catalog.find(x=>x.id===id).level<=state.level);if(!state.upgrades.includes('pot2'))state.upgrades=state.upgrades.filter(x=>x!=='pot3');draw();const removed=previous.filter(id=>![...state.broths,...state.tops,...state.upgrades,...state.staff].includes(id));$('level-note').textContent=removed.length?'Đã bỏ khỏi cấu hình vì giảm cấp: '+removed.map(id=>M.byId[id]?.name||M.upgrades.find(x=>x.id===id)?.name||M.staff.find(x=>x.id===id)?.name).join(', '):'Tăng cấp không tự chọn món hoặc mua trang bị.';}
  if(e.target.dataset.kind){if(e.target.value==='pot3'&&e.target.checked&&!state.upgrades.includes('pot2')){state.upgrades.push('pot2');document.querySelector('[data-kind="upgrades"][value="pot2"]').checked=true;}if(e.target.value==='pot2'&&!e.target.checked){state.upgrades=state.upgrades.filter(x=>x!=='pot3');document.querySelector('[data-kind="upgrades"][value="pot3"]').checked=false;}for(const el of document.querySelectorAll('[data-price]'))el.disabled=![...state.broths,...state.tops].includes(el.dataset.price);}
- if(state.reviews===0)$('stars').value=4;capacity();stale();if(!validateInputs()){ $('saved').textContent='Chưa lưu · đang nhập dở';return;}try{M.validate(state);save();status('Sẵn sàng tính lại.');}catch(err){status(err.message+' Cấu hình chưa hợp lệ nên chưa ghi đè bản đã lưu.',true);}
+ if(state.reviews===0)$('stars').value=4;filterMenu();capacity();stale();if(!validateInputs()){ $('saved').textContent='Chưa lưu · đang nhập dở';return;}try{M.validate(state);save();status('Sẵn sàng tính lại.');}catch(err){status(err.message+' Cấu hình chưa hợp lệ nên chưa ghi đè bản đã lưu.',true);}
 }
 $('form').addEventListener('input',changed);$('menurows').addEventListener('input',changed);
 $('reset').onclick=()=>{$('reset-confirm').hidden=false;$('cancel-reset').focus();};
 $('cancel-reset').onclick=()=>{$('reset-confirm').hidden=true;$('reset').focus();};
-$('confirm-reset').onclick=()=>{$('reset-confirm').hidden=true;restoreError='';recoveryRaw=null;$('storage-note').textContent='';$('recovery').hidden=true;state=M.defaults();draw();save();stale();status('Đã trở về cấu hình khởi đầu LV1.');};
+$('confirm-reset').onclick=()=>{$('reset-confirm').hidden=true;restoreError='';recoveryRaw=null;$('storage-note').textContent='';$('recovery').hidden=true;state=M.defaults();draw();save();stale();status('Đã trở về cấu hình khởi đầu LV1.');validateInputs();};
 $('unlock').onclick=()=>{state.broths=M.broths.filter(x=>x.level<=state.level).map(x=>x.id);state.tops=M.tops.filter(x=>x.level<=state.level).map(x=>x.id);draw();save();stale();};
 $('export').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.href=url;a.download='quan-mi-cay.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 function show(r){const a=r.stats,b=r.baseline,delta=a.profit-b.profit,loss=a.timeout+a.unfinished;
