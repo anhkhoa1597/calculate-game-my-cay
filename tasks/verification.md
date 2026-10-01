@@ -25,3 +25,5 @@ Bản code `c1fec18` đã push thành công lên `origin/main`. Checklist hoàn 
 - Browser mobile 390px: chọn LV5/chương 3, reload giữ chương; giảm LV1 tự hạ chương 1; tính Worker hoàn tất, toàn bộ tô là app, tại quán 0, fixed 15.000 và tip 0; áp dụng giá và reload giữ chương. Không tràn ngang (scrollWidth = innerWidth = 390), console không lỗi. Dùng cấu hình thử đang lưu gồm 3 topping, không coi đây là fixture 2 topping của kiểm tra core. Ảnh: mobile-game-2.3.8.jpg.
 - Smoke phát hiện đường input level chưa cập nhật giới hạn chương ngay: đã cho xử lý thay đổi level từ input và kiểm tra lại thành công. Các lỗi assert ban đầu là fixture quá tải chưa đủ chậm, trường metadata event và sai số float; sửa fixture/so sánh rồi chạy lại toàn bộ checks.
 - Không thêm dependency, không đưa bundle game vào repo. Các nhánh drama/minigame ngoài core vẫn là snapshot trích 27/09; chỉ các rule/data ghi trong báo cáo audit được đối chiếu lại.
+
+Code 2.3.8 `634780a` đã push lên origin/main. Chưa xác nhận GitHub Pages triển khai bản mới.

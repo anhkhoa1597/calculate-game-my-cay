@@ -77,6 +77,6 @@ Không còn yêu cầu nghiệm thu ma trận UI cũ, Lighthouse, điện thoạ
 - [x] Đối chiếu bundle mới, catalog và các công thức ảnh hưởng tới tối ưu.
 - [x] Cập nhật chương, kênh bán, sức chứa, thuê, thời tiết, cấu hình cũ và data tra cứu.
 - [x] Chạy kiểm tra core 5 chương, 1.000 ngày LV1 giá 30k, Worker và lưu chương; smoke mobile một lượt.
-- [ ] Ghi kết quả, commit và push.
+- [x] Ghi kết quả, commit và push.
 
 Triển khai tuần tự toàn bộ trước khi chạy kiểm tra theo yêu cầu người dùng. Giữ ngân sách seed/tìm giá; không ép mô phỏng thành 24 khách, không mở rộng test UI.
