@@ -1,6 +1,6 @@
 # Spec: Sổ giá Tiệm Mì Cay
 
-Trạng thái: bản đề xuất để người dùng duyệt.
+Trạng thái: đã được người dùng duyệt ngày 02/10/2026; kế hoạch triển khai ở `tasks/plan.md` và `tasks/todo.md`.
 Ngày: 02/10/2026.
 Phạm vi: thiết kế lại trải nghiệm của công cụ hiện có, ưu tiên điện thoại. Đây là một capability giao diện trên bộ tính toán đã có; không chia thành nhiều module hay viết lại engine trong đợt này.
 
@@ -272,8 +272,8 @@ Trình duyệt phải kiểm tra ít nhất Safari iOS và Chrome Android cho b�
 - [ ] AC11: Light/dark, keyboard, reduced motion và contrast có bằng chứng kiểm tra thực.
 - [ ] AC12: Tất cả Node checks và syntax checks liên quan qua; giới hạn mô hình và tiêu chí chưa đo được ghi trung thực.
 
-## 12. Điểm cần duyệt
+## 12. Quyết định đã duyệt
 
 Bản đề xuất mặc định giữ nhận diện và stack, thêm lọc menu, inline validation, dark mode theo hệ thống và Worker để giao diện phản hồi khi tính. Mục tiêu tối ưu vẫn là lợi nhuận một ngày.
 
-Sau khi người dùng duyệt spec này, bước tiếp theo mới là cập nhật plan/tasks và triển khai. Những yêu cầu trong tài liệu là mục tiêu của đợt tiếp theo, không phải mô tả rằng code hiện tại đã đáp ứng.
+Người dùng đã duyệt spec. Bước tiếp theo là duyệt kế hoạch/tasks trước khi triển khai theo workflow đã chọn. Những yêu cầu trong tài liệu là mục tiêu của đợt tiếp theo, không phải mô tả rằng code hiện tại đã đáp ứng.
