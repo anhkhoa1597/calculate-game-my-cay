@@ -17,7 +17,15 @@ function persist(storage, state, recovery) {
  Model.validate(state);
  storage.setItem(storageKey, JSON.stringify(state));
 }
-if (typeof module === 'object') module.exports = {restore, persist};
+function numberError(raw,min,max,step){
+ if(String(raw).trim()==='')return 'Cần nhập một giá trị.';
+ const n=Number(raw);
+ if(!Number.isFinite(n)||n<min||n>max)return `Nhập số từ ${min.toLocaleString('vi-VN')} đến ${max.toLocaleString('vi-VN')}.`;
+ const ticks=(n-min)/step;
+ if(Math.abs(ticks-Math.round(ticks))>1e-7)return `Nhập theo bước ${step.toLocaleString('vi-VN')}.`;
+ return '';
+}
+if (typeof module === 'object') module.exports = {restore, persist, numberError};
 else init();
 function init() {
 const M = Model;
@@ -41,17 +49,38 @@ function draw(){
 function capacity(){const cycle=state.upgrades.includes('fire')?4.2:5.2,pots=state.upgrades.includes('pot3')?3:state.upgrades.includes('pot2')?2:1;
  $('capacity').textContent=`${state.upgrades.includes('seat4')?4:3} bàn · ${pots} nồi luộc · mì chín khoảng ${num(cycle*(state.staff.includes('boil')?.64:.6))} giây. Giảm thời gian thao tác giúp bếp theo kịp khách.`;
 }
-function read(){const s={...state,prices:{...state.prices}};for(const id of numeric)s[id]=Number($(id).value);for(const id of bool)s[id]=$(id).checked;s.event=$('event').value;
+function read(){const s={...state,prices:{...state.prices}};for(const id of numeric)s[id]=($(id).value.trim()===''?NaN:Number($(id).value));for(const id of bool)s[id]=$(id).checked;s.event=$('event').value;
  for(const kind of ['broths','tops','upgrades','staff'])s[kind]=[...document.querySelectorAll(`[data-kind="${kind}"]:checked`)].map(x=>x.value);
- for(const el of document.querySelectorAll('[data-price]'))s.prices[el.dataset.price]=Number(el.value);if(s.reviews===0)s.stars=4;return s;
+ for(const el of document.querySelectorAll('[data-price]'))s.prices[el.dataset.price]=(el.value.trim()===''?NaN:Number(el.value));if(s.reviews===0)s.stars=4;return s;
 }
+function validateInputs(focus=false){
+ for(const el of document.querySelectorAll('[aria-invalid]')){el.removeAttribute('aria-invalid');el.removeAttribute('aria-describedby');}
+ for(const el of document.querySelectorAll('.field-error'))el.remove();
+ const errors=[];
+ for(const el of document.querySelectorAll('#form input[type=number], #menurows input[data-price]:not(:disabled)')){
+  const message=numberError(el.value,Number(el.min),Number(el.max),Number(el.step));
+  if(message)errors.push({el,message});
+ }
+ if(!state.broths.length)errors.push({el:$('menu-selection'),message:'Chọn ít nhất một nước lèo đang bán.'});
+ if(state.upgrades.includes('pot3')&&!state.upgrades.includes('pot2'))errors.push({el:$('upgrades'),message:'Nồi thứ ba cần nồi thứ hai.'});
+ for(const [i,{el,message}] of errors.entries()){
+  if(!el.id)el.id='price-'+el.dataset.price;
+  const note=document.createElement('span');note.className='field-error';note.id='error-'+el.id;note.textContent=message;
+  el.setAttribute('aria-invalid','true');el.setAttribute('aria-describedby',note.id);el.after(note);
+ }
+ $('errors').hidden=!errors.length;
+ $('errors').innerHTML=errors.length?'<h3>Kiểm tra '+errors.length+' mục trước khi tính</h3><ul>'+errors.map(({el,message})=>`<li><a href="#${el.id}">${escapeHTML(el.getAttribute('aria-label')||el.closest('label')?.firstChild?.textContent||'Menu / trang bị')}: ${escapeHTML(message)}</a></li>`).join('')+'</ul>':'';
+ if(errors.length&&focus)$('errors').focus();
+ return !errors.length;
+}
+$('errors').onclick=e=>{const link=e.target.closest('a');if(!link)return;e.preventDefault();const el=$(link.hash.slice(1));for(let parent=el.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;el.focus();el.scrollIntoView({block:'center'});};
 function stale(){result=null;$('results').innerHTML='<div class="stale">Thông số đã thay đổi. Bấm “Tìm giá cho quán” để tính lại.</div>';for(const el of document.querySelectorAll('[data-recommend]'))el.textContent='—';}
-function changed(e){if(working)return;if(e.target.id==='stars'&&Number($('reviews').value)===0)$('reviews').value=30;state=read();
- if(e.target.id==='level'){for(const [kind,catalog] of [['broths',M.broths],['tops',M.tops],['upgrades',M.upgrades],['staff',M.staff]])state[kind]=state[kind].filter(id=>catalog.find(x=>x.id===id).level<=state.level);if(!state.broths.length)state.broths=['kimchi'];if(!state.upgrades.includes('pot2'))state.upgrades=state.upgrades.filter(x=>x!=='pot3');draw();}
+function changed(e){if(working)return;if(e.target.id==='stars'&&$('reviews').value==='0'){$('reviews').value=30;$('reviews-note').textContent='Đã dùng xấp xỉ 30 đánh giá ở mức sao vừa nhập.';}state=read();
+ if(e.target.id==='level'&&Number.isInteger(state.level)&&state.level>=1&&state.level<=10){const previous=[...state.broths,...state.tops,...state.upgrades,...state.staff];for(const [kind,catalog] of [['broths',M.broths],['tops',M.tops],['upgrades',M.upgrades],['staff',M.staff]])state[kind]=state[kind].filter(id=>catalog.find(x=>x.id===id).level<=state.level);if(!state.upgrades.includes('pot2'))state.upgrades=state.upgrades.filter(x=>x!=='pot3');draw();const removed=previous.filter(id=>![...state.broths,...state.tops,...state.upgrades,...state.staff].includes(id));$('level-note').textContent=removed.length?'Đã bỏ khỏi cấu hình vì giảm cấp: '+removed.map(id=>M.byId[id]?.name||M.upgrades.find(x=>x.id===id)?.name||M.staff.find(x=>x.id===id)?.name).join(', '):'Tăng cấp không tự chọn món hoặc mua trang bị.';}
  if(e.target.dataset.kind){if(e.target.value==='pot3'&&e.target.checked&&!state.upgrades.includes('pot2')){state.upgrades.push('pot2');document.querySelector('[data-kind="upgrades"][value="pot2"]').checked=true;}if(e.target.value==='pot2'&&!e.target.checked){state.upgrades=state.upgrades.filter(x=>x!=='pot3');document.querySelector('[data-kind="upgrades"][value="pot3"]').checked=false;}for(const el of document.querySelectorAll('[data-price]'))el.disabled=![...state.broths,...state.tops].includes(el.dataset.price);}
- capacity();stale();try{M.validate(state);save();status('Sẵn sàng tính lại.');}catch(err){status(err.message+' Cấu hình chưa hợp lệ nên chưa ghi đè bản đã lưu.',true);}
+ if(state.reviews===0)$('stars').value=4;capacity();stale();if(!validateInputs()){ $('saved').textContent='Chưa lưu · đang nhập dở';return;}try{M.validate(state);save();status('Sẵn sàng tính lại.');}catch(err){status(err.message+' Cấu hình chưa hợp lệ nên chưa ghi đè bản đã lưu.',true);}
 }
-$('form').addEventListener('change',changed);$('menurows').addEventListener('change',changed);
+$('form').addEventListener('input',changed);$('menurows').addEventListener('input',changed);
 $('reset').onclick=()=>{$('reset-confirm').hidden=false;$('cancel-reset').focus();};
 $('cancel-reset').onclick=()=>{$('reset-confirm').hidden=true;$('reset').focus();};
 $('confirm-reset').onclick=()=>{$('reset-confirm').hidden=true;restoreError='';recoveryRaw=null;$('storage-note').textContent='';$('recovery').hidden=true;state=M.defaults();draw();save();stale();status('Đã trở về cấu hình khởi đầu LV1.');};
@@ -90,7 +119,7 @@ function findPrices(config) {
  });
 }
 $('form').onsubmit=async e=>{e.preventDefault();if(working)return;
- try{state=read();M.validate(state);}catch(err){status(err.message,true);return;}
+ try{state=read();if(!validateInputs(true))return;M.validate(state);}catch(err){status(err.message,true);return;}
  save();working=true;result=null;$('results').innerHTML='<div class="empty"><h2>Đang tìm giá…</h2><p>So sánh sức bếp, thời gian chờ và lợi nhuận qua nhiều ngày mô phỏng.</p></div>';$('controls').disabled=true;$('unlock').disabled=true;$('export').disabled=true;for(const el of document.querySelectorAll('#menurows input'))el.disabled=true;
  $('results').setAttribute('aria-busy','true');status('Đang mô phỏng các bảng giá…');await new Promise(r=>setTimeout(r,40));
  try{result=await findPrices(structuredClone(state));draw();show(result);if(window.matchMedia('(max-width: 800px)').matches)$('results').scrollIntoView({block:'start'});status('Đã tính xong. Kết quả phụ thuộc tốc độ bạn nhập và giả định mô phỏng.');}

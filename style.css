@@ -81,3 +81,5 @@ input,select,button,a,summary{touch-action:manipulation}
  .badge{max-width:130px;font-size:10px;padding:6px 8px}
 }
 @media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+
+[hidden]{display:none!important}.warning:empty{display:none}.field-error{display:block;color:var(--accent);font-size:12px;margin:4px 0}input[aria-invalid=true]{border:2px solid var(--accent)}#errors ul{padding-left:20px}#errors:focus{outline:3px solid var(--accent)}

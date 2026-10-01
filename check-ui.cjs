@@ -13,3 +13,7 @@ assert.throws(()=>UI.persist(storage,M.defaults(),true));assert.equal(raw,'{brok
 assert.throws(()=>UI.persist({setItem(){throw Error('quota');}},M.defaults(),false),/quota/);
 assert(UI.restore({getItem(){throw Error('denied');}}).error);
 console.log('PASS: restore bản cũ, giá, bản hỏng, bảo vệ bản hợp lệ, lỗi storage.');
+assert(UI.numberError('',1,10,1));assert(UI.numberError('0',1,10,1));
+assert(UI.numberError('1.5',1,10,1));assert.equal(UI.numberError('0',0,30,1),'');
+assert(UI.numberError('500',1000,105000,1000));assert(UI.numberError('35500',1000,105000,1000));
+assert.equal(UI.numberError('.45',.05,10,.05),'');
