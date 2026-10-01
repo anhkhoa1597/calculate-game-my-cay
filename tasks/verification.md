@@ -11,3 +11,5 @@ Triển khai hết phần code rồi mới chạy checks theo yêu cầu ngườ
 - Review đường save/submit: save catch lỗi và trả false; submit vẫn dùng snapshot hợp lệ, không phụ thuộc save thành công. Không tiêm lỗi localStorage trong browser.
 - Không sửa engine.js/game-data.js hay số lượt mô phỏng. Không kiểm thử điện thoại vật lý/Lighthouse/ma trận UI cũ theo spec đã rút gọn.
 - Không xác nhận GitHub Pages đã triển khai từ việc push.
+
+Bản code `c1fec18` đã push thành công lên `origin/main`. Checklist hoàn tất theo spec mới; Pages chưa được kiểm tra triển khai.

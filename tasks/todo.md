@@ -58,7 +58,7 @@ Cập nhật 02/10/2026 theo `SPEC.md` mới. Checklist cũ T1–T9 được tha
 **Acceptance:**
 - [x] Engine/Worker/logic UI/cú pháp liên quan qua; giữ nguyên engine/data/seed/sample count và smoke luồng mobile sau thay đổi cuối.
 - [x] README ghi đúng tự nhớ phụ, không JSON, Worker/fallback và giới hạn mô hình; không nhận đã test thiết bị thật nếu chưa làm.
-- [ ] Commit/push hoàn tất, working tree được báo đúng; không suy ra Pages đã triển khai chỉ từ việc push.
+- [x] Commit/push hoàn tất, working tree được báo đúng; không suy ra Pages đã triển khai chỉ từ việc push.
 
 **Verify:** `node check.cjs`; `node check-worker.cjs`; `node check-ui.cjs`; `node --check app.js`; `node --check engine.js`; `node --check worker.js`; `git diff --check`; `git status --short`; đối chiếu commit local/remote sau push. Không cần build.
 **Dependencies:** R2, R3.
@@ -68,6 +68,6 @@ Cập nhật 02/10/2026 theo `SPEC.md` mới. Checklist cũ T1–T9 được tha
 ## Checkpoint: Hoàn tất
 
 - [x] M01–M08 được đối chiếu với kết quả kiểm tra thực.
-- [ ] Tài liệu và repo đã cập nhật; báo rõ trạng thái Pages nếu có kiểm tra.
+- [x] Tài liệu và repo đã cập nhật; báo rõ trạng thái Pages nếu có kiểm tra.
 
 Không còn yêu cầu nghiệm thu ma trận UI cũ, Lighthouse, điện thoại thật, mọi theme/zoom hoặc xuất/phục hồi bản lưu. Không xóa test tính toán để giảm khối lượng UI.
