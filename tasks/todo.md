@@ -1,0 +1,4 @@
+- [x] Engine mô phỏng và kiểm tra
+- [x] Giao diện và lưu localStorage
+- [x] Kiểm chứng LV1 / full quán, đóng gói
+- [ ] Trình duyệt: chưa kiểm tra trực tiếp vì cua không có browser kết nối (inventory trống).
