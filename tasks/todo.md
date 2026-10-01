@@ -17,34 +17,57 @@ Cập nhật 02/10/2026 theo `SPEC.md` mới. Checklist cũ T1–T9 được tha
 - Verify: đối chiếu yêu cầu mới với `SPEC.md`, `tasks/plan.md` và todo.
 - Files: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`.
 
-## R2: Lưu tự động đơn giản
+## R2: Người dùng được tự nhớ cấu hình khi chơi
 
-- [ ] Bỏ nút/handler JSON và UI phục hồi; cấu hình hỏng dùng LV1, không khóa ghi cấu hình mới.
-- [ ] Tự nhớ cấu hình hợp lệ khi cập nhật thông số/chọn món/chỉnh giá và khi Tìm giá/Dùng giá.
-- [ ] Input sai không ghi đè bản hợp lệ; lỗi storage chỉ báo ngắn, vẫn tính được.
-- [ ] Giữ key/schema bản cũ còn hợp lệ; reset có xác nhận gọn.
-- Verify: Node checks logic lưu liên quan, một lần cập nhật → reload; xác nhận lỗi lưu không chặn tính.
-- Files: `app.js`, `index.html`, `check-ui.cjs` nếu hành vi test cần cập nhật.
-- Trace: M04, M05.
+**Mô tả:** Làm gọn đường cập nhật → lưu → reload và đường tìm giá; bỏ JSON/phục hồi, giữ reset có xác nhận gọn.
 
-## R3: Hoàn thiện luồng mobile
+**Acceptance:**
+- [ ] Chỉnh thông số/menu hoặc Tìm giá/Dùng giá tự nhớ cấu hình hợp lệ với key/schema cũ; input sai không ghi đè bản hợp lệ.
+- [ ] Không còn nút/handler import/export/phục hồi JSON; bản lưu hỏng dùng LV1 và cho ghi cấu hình mới, không khóa tác vụ.
+- [ ] Storage lỗi chỉ báo ngắn và không ngăn tính; hủy reset giữ nguyên cấu hình.
 
-- [ ] Nhập quán/menu dễ chạm, chữ đủ đọc; menu/kết quả không kéo ngang.
-- [ ] Lọc không làm mất giá/lựa chọn; Tìm giá hoạt động khi vừa nhập/tìm tên món.
-- [ ] Kết quả có lời/lỗ, chênh lệch, sức phục vụ/mất khách/sao và giải thích đúng.
-- [ ] Thanh dưới không che input; desktop mở được và dùng được, không tối ưu riêng.
-- Verify: một smoke mobile khoảng 390px, liếc 320px và mở desktop một lần; sửa lỗi thực phát hiện.
-- Files: `app.js`, `index.html`, `style.css`.
-- Trace: M01, M02, M03, M07.
+**Verify:** `node check-ui.cjs`; `node --check app.js`; `git diff --check`; một lần cập nhật → reload và xác nhận đường tính không phụ thuộc save thành công. Chỉnh test phục hồi cũ theo hành vi mới, không dựng hệ thống test storage mới.
+**Dependencies:** R1 đã xong.
+**Files:** `app.js`, `index.html`, `check-ui.cjs`.
+**Scope:** M, 3 files. **Trace:** M04, M05.
 
-## R4: Kiểm tra logic và hoàn tất
+## R3: Người dùng tìm và dùng giá thuận tiện trên mobile
 
-- [ ] Engine/Worker/logic UI/cú pháp liên quan qua; engine/data/sample count giữ nguyên.
-- [ ] Smoke luồng nhập → chọn/lọc → tính → xem → dùng giá → reload qua.
-- [ ] README phản ánh lưu phụ, không JSON, Worker/fallback và giới hạn mô hình.
-- [ ] Commit/push hoàn tất; phân biệt trạng thái repo với triển khai Pages.
-- Verify: lệnh `SPEC.md`; `git diff --check`, `git status --short` và trạng thái remote sau push.
-- Files: `README.md`, `tasks/todo.md`, `tasks/verification.md` nếu cần ghi kết quả ngắn.
-- Trace: M06, M08 và luồng chính M01–M07.
+**Mô tả:** Hoàn tất các chỉnh sửa UI đang dở, sửa vướng mắc thực tế trong một luồng mobile; giữ desktop đơn giản.
+
+**Acceptance:**
+- [ ] Nhập quán/menu dễ chạm, đủ đọc; menu/kết quả không kéo ngang và thanh dưới không che thao tác nhập.
+- [ ] Tìm/lọc không mất giá/lựa chọn; Tìm giá hoạt động sau nhập/tìm tên món; kết quả phân biệt lời/lỗ, chênh lệch, sức phục vụ/mất khách/sao đúng.
+- [ ] Luồng tìm → xem → dùng giá → reload chạy được trên mobile; desktop mở và dùng cùng chức năng, không cần layout riêng.
+
+**Verify:** `node check-ui.cjs`; `node --check app.js`; smoke khoảng 390px, liếc 320px và mở desktop một lần. Tái dùng bằng chứng cũ cho phần không đổi; không chạy ma trận UI rộng.
+**Dependencies:** R2.
+**Files:** `app.js`, `index.html`, `style.css`.
+**Scope:** M, 3 files. **Trace:** M01, M02, M03, M07.
+
+## Checkpoint: Sau R2–R3
+
+- [ ] Tự nhớ/reload và luồng mobile chính hoạt động; không còn luồng JSON/phục hồi.
+- [ ] Checks liên quan qua; kết quả vẫn từ engine hiện có.
+- [ ] Ghi ngắn kết quả thực đã kiểm tra, tiếp tục R4 theo phạm vi đã duyệt.
+
+## R4: Bản cập nhật được kiểm tra và đưa lên repo
+
+**Mô tả:** Kiểm tra tính toán và phần kết nối còn lại, cập nhật hướng dẫn, commit/push theo quyền đã có.
+
+**Acceptance:**
+- [ ] Engine/Worker/logic UI/cú pháp liên quan qua; giữ nguyên engine/data/seed/sample count và smoke luồng mobile sau thay đổi cuối.
+- [ ] README ghi đúng tự nhớ phụ, không JSON, Worker/fallback và giới hạn mô hình; không nhận đã test thiết bị thật nếu chưa làm.
+- [ ] Commit/push hoàn tất, working tree được báo đúng; không suy ra Pages đã triển khai chỉ từ việc push.
+
+**Verify:** `node check.cjs`; `node check-worker.cjs`; `node check-ui.cjs`; `node --check app.js`; `node --check engine.js`; `node --check worker.js`; `git diff --check`; `git status --short`; đối chiếu commit local/remote sau push. Không cần build.
+**Dependencies:** R2, R3.
+**Files:** `README.md`, `tasks/todo.md`, `tasks/verification.md` nếu cần ghi kết quả ngắn.
+**Scope:** M, tối đa 3 files. **Trace:** M06, M08 và luồng chính M01–M07.
+
+## Checkpoint: Hoàn tất
+
+- [ ] M01–M08 được đối chiếu với kết quả kiểm tra thực.
+- [ ] Tài liệu và repo đã cập nhật; báo rõ trạng thái Pages nếu có kiểm tra.
 
 Không còn yêu cầu nghiệm thu ma trận UI cũ, Lighthouse, điện thoại thật, mọi theme/zoom hoặc xuất/phục hồi bản lưu. Không xóa test tính toán để giảm khối lượng UI.

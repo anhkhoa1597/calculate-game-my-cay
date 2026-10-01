@@ -1,6 +1,6 @@
 # Spec: Sổ giá Tiệm Mì Cay — ưu tiên mobile
 
-Cập nhật: 02/10/2026, theo yêu cầu mới của người dùng. Bản này thay thế phạm vi UI/lưu trữ/kiểm thử của spec trước; hợp đồng tính toán vẫn giữ nguyên.
+Cập nhật: 02/10/2026. Người dùng đã duyệt phạm vi mới. Bản này thay thế phạm vi UI/lưu trữ/kiểm thử của spec trước; hợp đồng tính toán vẫn giữ nguyên.
 
 ## 1. Mục tiêu và ưu tiên
 

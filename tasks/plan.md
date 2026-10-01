@@ -1,6 +1,6 @@
 # Plan: ưu tiên mobile, giảm phần lưu và kiểm thử UI
 
-Cập nhật 02/10/2026 theo yêu cầu mới; đọc `SPEC.md` thay cho các tiêu chí UI/storage/test cũ. Task list: `tasks/todo.md`.
+Cập nhật 02/10/2026 theo yêu cầu mới; đọc `SPEC.md` thay cho các tiêu chí UI/storage/test cũ. Spec đã được người dùng duyệt. Task list duy nhất: `tasks/todo.md`. Lượt này chốt kế hoạch, không sửa code sản phẩm.
 
 ## Trạng thái thực tế
 
@@ -17,6 +17,20 @@ Hiện còn sửa code chưa commit từ đợt trước. Giữ chúng để x�
 
 Làm tuần tự. Không thêm subagent, dependency, framework test hoặc bước duyệt lặp lại cho phạm vi người dùng đã chỉ rõ.
 
+## Dependencies và checkpoint
+
+```text
+R1 Spec đã duyệt → R2 Tự nhớ đơn giản → R3 Luồng mobile
+                                      ↓
+                            Checkpoint: luồng chính
+                                      ↓
+                            R4 Kiểm tra và hoàn tất
+```
+
+R2 làm trước vì đang có nhánh chặn ghi khi cấu hình hỏng và các nút JSON trong app; bỏ chúng phải đồng thời sửa handlers và checks. R3 sử dụng trạng thái lưu mới để kiểm tra trọn luồng. R4 chạy kiểm tra cuối sau khi UI ổn định.
+
+Checkpoint sau R2–R3: cấu hình được tự nhớ, không có luồng JSON, mobile tìm/lọc/tính/dùng giá hoạt động. Checkpoint cuối: kiểm tra logic qua, tài liệu đúng hành vi và repo được push. Ghi kết quả ngắn, không thêm vòng xin duyệt hoặc mở lại ma trận UI cũ.
+
 ## Kiến trúc giữ nguyên
 
 HTML/CSS/JavaScript tĩnh; state đầy đủ độc lập với bộ lọc; Worker dùng snapshot và request id; engine/data không đổi. localStorage best-effort sau cập nhật hợp lệ và trước tìm giá, thất bại vẫn tiếp tục tác vụ.
@@ -26,3 +40,15 @@ HTML/CSS/JavaScript tĩnh; state đầy đủ độc lập với bộ lọc; Wor
 Lệnh ở `SPEC.md`. Tập trung engine, công suất khách và nội dung đề xuất; UI chỉ smoke luồng chính. Kết quả test trước đây không cần chạy lại nếu code liên quan không đổi. Không còn gate Lighthouse, ma trận 6 widths, thiết bị thật, zoom/theme sâu hoặc phục hồi JSON.
 
 Push thành công không đồng nghĩa GitHub Pages đã triển khai; không báo đã deploy nếu chưa có bằng chứng.
+
+## Rủi ro và xử lý
+
+| Rủi ro | Cách xử lý |
+|---|---|
+| Bỏ JSON nhưng còn handler tham chiếu nút đã xóa | Sửa markup/handlers cùng R2; kiểm tra cú pháp và smoke |
+| Save lỗi làm gián đoạn tối ưu | Save trả thành công/thất bại; submit vẫn chạy với cấu hình hợp lệ |
+| Bộ lọc đọc thiếu món đang ẩn | Giữ state đầy đủ; lọc chỉ đổi cách hiển thị |
+| Code chưa commit bị mất trong lúc làm gọn | Rà diff hiện có, giữ chỉnh sửa hữu ích và commit theo từng task |
+| Thay đổi UI vô tình đổi kết quả | Không sửa engine/data; giữ checks Worker/seed/công suất |
+
+Không có câu hỏi sản phẩm đang chặn. Desktop, lưu trữ và test UI không được mở rộng ngoài spec đã duyệt.
