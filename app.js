@@ -164,7 +164,14 @@ $('form').onsubmit=async e=>{e.preventDefault();if(working)return;
  catch(err){status('Không tính được: '+err.message,true);draw();}
  finally{working=false;$('controls').disabled=false;$('unlock').disabled=false;$('export').disabled=false;$('results').removeAttribute('aria-busy');}
 };
-$('database').innerHTML=M.data.map(section=>`<details><summary>${escapeHTML(section.title)}</summary><div class="tablewrap"><table><thead><tr>${section.headers.map(x=>`<th>${escapeHTML(x)}</th>`).join('')}</tr></thead><tbody>${section.rows.map(row=>`<tr>${row.map(x=>`<td>${escapeHTML(typeof x==='object'&&x!==null?JSON.stringify(x):x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`).join('');
+let databaseReady=false;
+document.querySelector('details.database').addEventListener('toggle',event=>{
+ if(!event.currentTarget.open||databaseReady)return;
+ try{
+  $('database').innerHTML=M.data.map((section,i)=>`<details><summary>${escapeHTML(section.title)}</summary><p class="scroll-hint">Bảng có thể rộng: vuốt ngang hoặc Tab vào vùng bảng rồi dùng phím mũi tên.</p><div class="tablewrap" tabindex="0" role="region" aria-label="${escapeHTML(section.title)}"><table><thead><tr>${section.headers.map(x=>`<th scope="col">${escapeHTML(x)}</th>`).join('')}</tr></thead><tbody>${section.rows.map(row=>`<tr>${row.map(x=>`<td>${escapeHTML(typeof x==='object'&&x!==null?JSON.stringify(x):x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`).join('');
+  databaseReady=true;
+ }catch(error){$('database').textContent='Không dựng được data: '+error.message+'. Đóng và mở lại để thử lại.';}
+});
 draw();
 if(restoreError){$('saved').textContent='Chưa lưu · cần phục hồi';$('storage-note').textContent='Không đọc được bản lưu: '+restoreError+'. Bản gốc được giữ nguyên; đang hiển thị LV1.';$('recovery').hidden=recoveryRaw===null;}
 function download(text,name){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
