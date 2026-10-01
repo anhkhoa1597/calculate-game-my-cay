@@ -122,6 +122,19 @@ function show(r){const a=r.stats,b=r.baseline,delta=a.profit-b.profit,loss=a.tim
  for(const el of document.querySelectorAll('[data-recommend]'))el.textContent=[...state.broths,...state.tops].includes(el.dataset.recommend)?money(r.prices[el.dataset.recommend]):'—';
  $('apply').onclick=()=>{if(result!==r||working)return;state.prices={...r.prices};draw();save();stale();status('Đã lưu giá đề xuất vào cấu hình. Tính lại để so với mốc giá mới.');};
 }
+const bar=document.querySelector('.calculatebar');
+function measureBar(){if(bar.getBoundingClientRect().height)document.documentElement.style.setProperty('--bar-height',Math.ceil(bar.getBoundingClientRect().height)+'px');}
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(measureBar).observe(bar);else window.addEventListener('resize',measureBar);
+measureBar();
+function keyboardLayout(){
+ const editing=document.activeElement?.matches('input[type=number],input[type=search],select');
+ const shrunk=window.visualViewport&&window.visualViewport.height<window.innerHeight*.75;
+ document.body.classList.toggle('editing',!!editing||!!shrunk);
+}
+document.addEventListener('focusin',keyboardLayout);document.addEventListener('focusout',()=>queueMicrotask(keyboardLayout));
+window.visualViewport?.addEventListener('resize',keyboardLayout);
+let movedWhileWorking=false;
+for(const event of ['pointerdown','keydown','scroll'])window.addEventListener(event,()=>{if(working)movedWhileWorking=true;},{passive:true});
 let requestId = 0;
 function findPrices(config) {
  if (location.protocol === 'file:' || typeof Worker === 'undefined') {
@@ -145,9 +158,9 @@ function findPrices(config) {
 }
 $('form').onsubmit=async e=>{e.preventDefault();if(working)return;
  try{state=read();if(!validateInputs(true))return;M.validate(state);}catch(err){status(err.message,true);return;}
- save();working=true;result=null;$('results').innerHTML='<div class="empty"><h2>Đang tìm giá…</h2><p>So sánh sức bếp, thời gian chờ và lợi nhuận qua nhiều ngày mô phỏng.</p></div>';$('controls').disabled=true;$('unlock').disabled=true;$('export').disabled=true;for(const el of document.querySelectorAll('#menurows input'))el.disabled=true;
+ save();working=true;movedWhileWorking=false;result=null;$('results').innerHTML='<div class="empty"><h2>Đang tìm giá…</h2><p>So sánh sức bếp, thời gian chờ và lợi nhuận qua nhiều ngày mô phỏng.</p></div>';$('controls').disabled=true;$('unlock').disabled=true;$('export').disabled=true;for(const el of document.querySelectorAll('#menurows input'))el.disabled=true;
  $('results').setAttribute('aria-busy','true');status('Đang mô phỏng các bảng giá…');await new Promise(r=>setTimeout(r,40));
- try{result=await findPrices(structuredClone(state));hasCalculated=true;draw();show(result);if(window.matchMedia('(max-width: 800px)').matches)$('results').scrollIntoView({block:'start'});status('Đã tính xong. Kết quả phụ thuộc tốc độ bạn nhập và giả định mô phỏng.');}
+ try{result=await findPrices(structuredClone(state));hasCalculated=true;draw();show(result);if(!movedWhileWorking&&(document.activeElement===document.body||document.activeElement===$('calculate')))$('result-heading').focus({preventScroll:true});status('Đã tính xong. Kết quả phụ thuộc tốc độ bạn nhập và giả định mô phỏng.');}
  catch(err){status('Không tính được: '+err.message,true);draw();}
  finally{working=false;$('controls').disabled=false;$('unlock').disabled=false;$('export').disabled=false;$('results').removeAttribute('aria-busy');}
 };
