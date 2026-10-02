@@ -87,4 +87,4 @@ Triển khai tuần tự toàn bộ trước khi chạy kiểm tra theo yêu c�
 - [x] Viết RED trước GREEN cho forecast, min/max, no reviews và event; sửa core/UI; giữ tối ưu lợi nhuận.
 - [x] Checks đầy đủ core/Worker/UI, đối chiếu source 600 cấu hình và smoke mobile mới qua.
 - [x] Ghi kết quả và giới hạn mô hình.
-- [ ] Commit/push bản cập nhật theo quyền đã có.
+- [x] Commit/push bản cập nhật theo quyền đã có.

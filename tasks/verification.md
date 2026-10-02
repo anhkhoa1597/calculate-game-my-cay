@@ -36,3 +36,5 @@ Code 2.3.8 `634780a` đã push lên origin/main. Chưa xác nhận GitHub Pages 
 - PASS đối chiếu source wi trực tiếp ở /tmp/mi-cay-core-oracle.cjs: 600 cấu hình, sai số <1e-10. Bundle tải lại hash giống báo cáo source. Phép audit này không phụ thuộc việc khẳng định toàn bộ game đã được mô phỏng.
 - Browser mobile 390×844: ngày 2, 5 sao/30 đánh giá, 5 decor, kim chi/bò/xúc xích/rau 30k/22k/12k/7k; Worker tìm giá xong, khuyến nghị giữ đúng các giá đó; UI hiện 28,8 trung bình / 27–32 mẫu / 37 dự đoán game, tô tại quán 0. scrollWidth=390, console không có error/warn. Ảnh mobile-forecast-range.jpg. Viewport reset sau test.
 - Không mở rộng ma trận UI hoặc dependencies. Dự đoán 37 không phải số đơn app cam kết; min/max là mẫu 256 ngày, không giới hạn lý thuyết.
+
+Bản core/UI `ec6cb1c` đã push lên origin/main. Chưa kiểm tra Pages triển khai.
