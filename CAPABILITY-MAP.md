@@ -1,6 +1,6 @@
 # Capability map: Gia truyền tự đề xuất và giao diện gọn
 
-02/10/2026 · Dự thảo chờ duyệt phạm vi. Không thay thế spec/plan của bản đã triển khai. Chưa viết spec từng module hoặc sửa code trong bước này.
+02/10/2026 · Phạm vi được người dùng chốt và yêu cầu chuyển sang plan. Hai spec module ghi lại phạm vi đã chốt; kế hoạch/task đang chờ duyệt. Chưa sửa code.
 
 | Module id | Trách nhiệm | Phụ thuộc |
 |---|---|---|

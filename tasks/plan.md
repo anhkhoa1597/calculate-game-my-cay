@@ -104,3 +104,33 @@ Danh sách việc chi tiết duy nhất nằm ở mục S1–S6 trong `tasks/tod
 Chạy các lệnh trong mục gia truyền của SPEC: `node --test check-secret.cjs`, core/forecast/Worker/UI, kiểm tra cú pháp và `git diff --check`. Smoke mobile một luồng nhập → tìm → đọc lợi ích → reload → đổi ngày. Ghi kết quả thật vào `tasks/verification.md`; cập nhật README theo phạm vi đã qua test. Commit/push theo quyền đã có; không tuyên bố Pages đã deploy khi chưa kiểm tra.
 
 Không có câu hỏi sản phẩm đang chặn; kế hoạch và task đã được duyệt.
+
+
+## Kế hoạch: gia truyền tự đề xuất và UI gọn — 02/10/2026
+
+Phạm vi người dùng đã chốt, yêu cầu chuyển sang plan. Căn cứ: CAPABILITY-MAP.md, SPEC-secret-recommendation.md, SPEC-compact-navigation.md. **Plan/task mới chờ duyệt; chưa sửa code.** Giữ nguyên R1–R6/S1–S6 đã hoàn tất.
+
+### Quyết định và thứ tự
+
+A1 core auto → A2 người dùng nhận kết quả auto qua Worker/UI → checkpoint core → A3 ba vùng nội dung → A4 menu/input/kết quả gọn → checkpoint luồng dùng → A5 hồi quy, tài liệu, commit/push.
+
+- Core trước UI: chọn nồi thành công theo mean ở cùng bảng giá; giá search có giới hạn hai lượt, không full search mỗi nồi. Recompute stats/baseline/alternatives theo nồi cuối, không dùng số liệu của nồi hạt giống.
+- A2 là lát cắt sử dụng được: bỏ trạng thái thủ công, nhớ cấu hình cũ nhưng không dùng secret cũ, đọc nồi tự đề xuất. A3/A4 thay cấu trúc/mật độ, không sửa công thức.
+- Giữ contract optimize/Worker hiện có và bổ sung result.secret rõ; helper simulate explicit không xóa để test. Tách helper render/navigation vừa đủ, không framework/router mới.
+- Checkpoint nội bộ lưu bằng chứng; kiểm tra toàn hệ thống cuối theo ưu tiên người dùng trước đó. Nếu lỗi quay lại task bị ảnh hưởng, chạy lại checks liên quan. Không thêm vòng duyệt từng task.
+- Task chi tiết duy nhất ở A1–A5 tasks/todo.md; mỗi task tối đa5 file. Làm tuần tự, không thêm subagent.
+
+### Rủi ro và xử lý
+
+| Rủi ro | Xử lý |
+|---|---|
+| Nồi cuối khác hạt giống, thống kê/ranking bị lệch | Batch độc lập theo nồi cuối; baseline cùng nồi, alternatives tính lại; nói rõ giới hạn search |
+| Hai search chậm trên mobile | Giới hạn hai lượt, không lặp; Worker/progress; đo thời gian cấu hình full menu khi kiểm tra |
+| Giá trị secret cũ ép lựa chọn | Bỏ qua ở optimize, normalize luồng app và kiểm tra old saves; không reset toàn quán |
+| Ẩn vùng làm mất state/focus hoặc lỗi khó tìm | State chung, fragment/history, định tuyến lỗi và ghi vị trí; không dựng lại form khi đổi vùng |
+| Thu nhỏ làm khó đọc/chạm | Ưu tiên giảm hero/padding/thẻ; mobile44px/font input16px, focus rõ; smoke390/320 |
+| Nội dung bị thanh dưới/bàn phím che | Safe area, chừa inset và xử lý keyboard; kiểm tra tại input/menu/kết quả |
+
+### Hoàn tất
+
+Checks ở hai spec, browser smoke gọn và kiểm tra core kỹ. Ghi kết quả thật trong tasks/verification.md, cập nhật README/giới hạn. Commit/push theo quyền đã có; xác nhận Pages riêng. Không có câu hỏi sản phẩm mới ngoài duyệt plan/task.
