@@ -27,3 +27,12 @@ Bản code `c1fec18` đã push thành công lên `origin/main`. Checklist hoàn 
 - Không thêm dependency, không đưa bundle game vào repo. Các nhánh drama/minigame ngoài core vẫn là snapshot trích 27/09; chỉ các rule/data ghi trong báo cáo audit được đối chiếu lại.
 
 Code 2.3.8 `634780a` đã push lên origin/main. Chưa xác nhận GitHub Pages triển khai bản mới.
+
+## TDD: dự đoán game và min–max tô
+
+- RED: check-forecast có 6 test fail (thiếu gameForecast/min–max, reviews=0 vẫn dùng sao nhập); GREEN sau sửa core. Test thứ 7 về event cấu hình fail trước khi helper nhận đúng event, rồi GREEN. Không skip test.
+- PASS node --test check-forecast.cjs: repro 37 vs 28,8, min/max đúng 64 seed độc lập, trung bình/SE, n=1 và n sai, no reviews, LED preview/bẩn, giá topping/menu/sàn/trần, mưa/xe dạo/cuối tuần.
+- PASS check.cjs (5 chương/thu chi/1.000 seed), check-ui.cjs, check-worker.cjs (LV1/ngày2/LV9, snapshot/progress/id/error, min–max và xếp hạng lợi nhuận), syntax app/engine/worker, diff whitespace.
+- PASS đối chiếu source wi trực tiếp ở /tmp/mi-cay-core-oracle.cjs: 600 cấu hình, sai số <1e-10. Bundle tải lại hash giống báo cáo source. Phép audit này không phụ thuộc việc khẳng định toàn bộ game đã được mô phỏng.
+- Browser mobile 390×844: ngày 2, 5 sao/30 đánh giá, 5 decor, kim chi/bò/xúc xích/rau 30k/22k/12k/7k; Worker tìm giá xong, khuyến nghị giữ đúng các giá đó; UI hiện 28,8 trung bình / 27–32 mẫu / 37 dự đoán game, tô tại quán 0. scrollWidth=390, console không có error/warn. Ảnh mobile-forecast-range.jpg. Viewport reset sau test.
+- Không mở rộng ma trận UI hoặc dependencies. Dự đoán 37 không phải số đơn app cam kết; min/max là mẫu 256 ngày, không giới hạn lý thuyết.

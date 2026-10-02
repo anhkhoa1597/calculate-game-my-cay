@@ -26,11 +26,13 @@ function validate(s){
  if(has(s,'pot3')&&!has(s,'pot2'))throw Error('Nồi thứ ba cần nồi thứ hai.');
  return s;
 }
-function traffic(s,p,t,stars=s.stars,event='normal'){
+function traffic(s,p,t,stars=s.reviews?s.stars:4,event='normal',preview=false){
  const ratio=s.broths.reduce((n,id)=>n+p[id]/byId[id].base,0)/s.broths.length/menu(s);
- const bonus=upgrades.reduce((n,x)=>n+(has(s,x.id)?x.traffic:0),0)+(has(s,'led')&&t>115.5?.25:0)+Math.min(.2,s.decor*.02)+Math.min(s.day,30)*.015;
- return (.6+.2*(stars-1))*(stars<4?.65:1)*(1+bonus)*Math.min(1,.65+s.day*.1)*clamp(1+s.buzz,.7,1.6)*(s.dirty?.75:1)*events[event]*(chapter(s)===2&&['rain','hot'].includes(event)?1.15:1)/clamp(ratio,.85,1.6)**2;
+ const bonus=upgrades.reduce((n,x)=>n+(has(s,x.id)?x.traffic:0),0)+(has(s,'led')?(preview?.25*.45:t>115.5?.25:0):0)+Math.min(.2,s.decor*.02)+Math.min(s.day,30)*.015;
+ return (.6+.2*(stars-1))*(stars<4?.65:1)*(1+bonus)*Math.min(1,.65+s.day*.1)*(preview?1+s.buzz:clamp(1+s.buzz,.7,1.6))*(s.dirty&&!preview?.75:1)*events[event]*(chapter(s)===2&&['rain','hot'].includes(event)?1.15:1)/clamp(ratio,.85,1.6)**2;
 }
+// Source so() is a generic pre-opening forecast; it does not use app cadence or kitchen capacity.
+function gameForecast(s,p,event=s.event==='auto'?(s.day>1&&[6,0].includes(s.day%7)?'weekend':'normal'):s.event){return Math.round(210*traffic(s,p,0,undefined,event,true)/10*.95);}
 function expensive(id,p,s){return p>(broths.some(x=>x.id===id)?60000:byId[id].base*1.5)*menu(s);}
 function patience(s){return (66+Math.min(s.level-1,8)*4)*(has(s,'fan')?1.25:1)*(has(s,'wifi')?1.12:1)*(has(s,'chair')?1.12:1)*(has(s,'tv')?1.1:1)*(s.pet?1.08:1);}
 function rng(seed){let a=seed>>>0;return ()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;};}
@@ -100,10 +102,11 @@ function simulate(s,p,seed){
  r.unfinished=groups.length;r.waste+=(basket+pot.filter(x=>x!==null).length)*3000+(current?.cost||0);
  r.profit=r.sales-r.fee-r.cost+r.tips-r.fixed-r.waste;r.endStars=stars();r.rating=r.ratingCount?r.ratings/r.ratingCount:0;
  r.wait=r.ratingCount?r.wait/Math.max(1,r.admitted-r.timeout-r.unfinished):0;
- r.traffic=traffic(s,p,0,s.stars,event);return r;
+ r.traffic=traffic(s,p,0,undefined,event);r.gameForecast=gameForecast(s,p,event);return r;
 }
-function batch(s,p,n=64,seed=7000){const runs=Array.from({length:n},(_,i)=>simulate(s,p,seed+i*7919)),a={};for(const key of Object.keys(runs[0]))if(typeof runs[0][key]==='number')a[key]=runs.reduce((v,r)=>v+r[key],0)/n;
- a.counts=Object.fromEntries(items.map(x=>[x.id,runs.reduce((v,r)=>v+r.counts[x.id],0)/n]));a.se=Math.sqrt(runs.reduce((v,r)=>v+(r.profit-a.profit)**2,0)/(n-1)/n);a.n=n;return a;}
+function batch(s,p,n=64,seed=7000){if(!Number.isInteger(n)||n<1)throw Error('Số lượt mô phỏng phải là số nguyên dương.');const runs=Array.from({length:n},(_,i)=>simulate(s,p,seed+i*7919)),a={};for(const key of Object.keys(runs[0]))if(typeof runs[0][key]==='number')a[key]=runs.reduce((v,r)=>v+r[key],0)/n;
+ a.servedMin=Math.min(...runs.map(r=>r.served));a.servedMax=Math.max(...runs.map(r=>r.served));
+ a.counts=Object.fromEntries(items.map(x=>[x.id,runs.reduce((v,r)=>v+r.counts[x.id],0)/n]));a.se=n===1?0:Math.sqrt(runs.reduce((v,r)=>v+(r.profit-a.profit)**2,0)/(n-1)/n);a.n=n;return a;}
 const rounded=(id,p)=>clamp(Math.round(p/1000)*1000,1000,Math.floor(byId[id].base*3/1000)*1000);
 async function optimize(s,progress=()=>{}){
  validate(s);const m=menu(s),seen=new Set(),all=[],active=[...s.broths,...s.tops];
@@ -126,5 +129,5 @@ async function optimize(s,progress=()=>{}){
  const baseline=batch(s,s.prices,256,9000000),validated=batch(s,best.prices,256,9000000);
  return {prices:best.prices,stats:validated,baseline,alternatives:finalists.slice(0,5),tested:all.length};
 }
-const api={maxChapter,service,data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,expensive,patience,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
+const api={maxChapter,service,data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,gameForecast,expensive,patience,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
 })(typeof window!=='undefined'?window:globalThis);

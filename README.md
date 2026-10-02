@@ -27,6 +27,10 @@ Chương 1 chỉ online, 3 đơn chờ, nhịp app ×0,55, không tiền thuê; 
 
 `engine.js` mô phỏng theo bước 0,1 giây: giờ cao điểm, giá và từ chối, trọng số 6 tô gần nhất, nhóm khách, bàn, app, kiên nhẫn, nồi luộc chạy song song, thao tác, nhân viên, sao mới, tip và chi phí. Mỗi món giá theo bước 1.000đ. Bộ tìm giá quét tỷ lệ và điều chỉnh từng món, kiểm chứng 8 phương án, rồi đánh giá phương án tốt nhất bằng 256 seed mới cùng mốc giá hiện tại.
 
+Giá tốt nhất được chọn theo **lợi nhuận trung bình** của các ngày kiểm chứng, không phải số tô trung bình hay lợi nhuận của một ngày thuận lợi. Khoảng tô tối thiểu–tối đa lấy min/max của số tô thực giao trong 256 seed cuối, tách biệt với khoảng tin cậy lợi nhuận; kết quả ngoài game có thể nằm ngoài khoảng này.
+
+Dự đoán trước mở cửa trong source (`so`) là `round(210 × wi() / 10 × 0,95)`. Chỉ số này dùng công thức khách chung, không điều chỉnh theo chương online, sức bếp, chỗ chờ và đơn mất. Công cụ hiển thị riêng dự đoán đó với số tô giao trung bình. Với sự kiện auto chưa biết, lấy trung bình dự đoán của các sự kiện được rút trong batch; chọn sự kiện thực tế để đối chiếu. LED trước mở cửa tính 0,25×0,45; sàn bẩn chỉ áp trong ca bán; chưa có đánh giá luôn dùng 4 sao.
+
 “Tốt nhất” trong tập đã thử, mục tiêu lợi nhuận một ngày, không phải tối ưu toàn cục hay cam kết kết quả trong game. Khoảng tin cậy chỉ phản ánh ngẫu nhiên mô phỏng. Tốc độ thực tế, thứ tự thao tác và các cơ chế không mô phỏng tạo sai số riêng.
 
 Bếp dùng pipeline lý tưởng: có nguyên liệu đủ, thao tác đúng, mì được lấy ở vùng chín, duy trì nồi đều và phục vụ đơn sắp hết hạn. Bảng tiêu thụ là trung bình phần đã bán, không phải lượng tồn kho đủ cho mọi trường hợp. Hao hụt thêm có ô nhập riêng. Không mô phỏng tô hướng dẫn đầu game (đồng hồ game tạm dừng), thiếu hàng, drama ngẫu nhiên, đổi yêu cầu, mặc cả, giao xa, công thức bí truyền, khách du lịch, nhiệm vụ/thưởng, phản hồi đánh giá hoặc lên cấp giữa ngày. Sale nguyên liệu không điều chỉnh giá vốn mua hàng trong mô hình chi phí tiêu thụ này. Không tính phí đầu tư trang bị/mở món.
@@ -35,6 +39,7 @@ Kiểm tra tính toán:
 
 ```sh
 node check.cjs
+node --test check-forecast.cjs
 node check-worker.cjs
 node check-ui.cjs
 node --check app.js

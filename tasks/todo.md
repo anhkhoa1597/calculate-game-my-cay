@@ -80,3 +80,11 @@ Không còn yêu cầu nghiệm thu ma trận UI cũ, Lighthouse, điện thoạ
 - [x] Ghi kết quả, commit và push.
 
 Triển khai tuần tự toàn bộ trước khi chạy kiểm tra theo yêu cầu người dùng. Giữ ngân sách seed/tìm giá; không ép mô phỏng thành 24 khách, không mở rộng test UI.
+
+## R6: Rà core, giải thích dự đoán game và thêm khoảng tô
+
+- [x] Tái lập theo giả định rõ ràng trường hợp ngày 2: 37 dự đoán và 28,8 tô mô phỏng.
+- [x] Viết RED trước GREEN cho forecast, min/max, no reviews và event; sửa core/UI; giữ tối ưu lợi nhuận.
+- [x] Checks đầy đủ core/Worker/UI, đối chiếu source 600 cấu hình và smoke mobile mới qua.
+- [x] Ghi kết quả và giới hạn mô hình.
+- [ ] Commit/push bản cập nhật theo quyền đã có.

@@ -187,3 +187,7 @@ Không có câu hỏi sản phẩm bắt buộc còn thiếu. Những yêu cầu
 Thêm chương 1–5, mặc định bếp nhà. Chương bị giới hạn bởi level nhưng không tự tăng theo level; cấu hình cũ thiếu chương migrate theo trần level như game, nhắc người chơi xác nhận. Bếp nhà chỉ có app, tối đa 3 đơn và hệ số nhịp 0,55; xe dạo có 2 chỗ, thu hút rain/hot ×1,15; từ chương 3 có 3 chỗ (seat4 tăng 4). Hai chương đầu không thuê; học sinh chỉ burst từ chương 2. Phí app 20% giữ nguyên.
 
 Tách chỉ số app/khách tại quán và cho xem giá hiện tại bên cạnh đề xuất. Đối chiếu ngày 1, LV1, giá kimchi 30.000 bằng nhiều seed; 24 khách thực tế là quan sát để so sánh, không hardcode thành kết quả. Mô phỏng ca bán thông thường chưa tái hiện tô hướng dẫn đầu tiên, giao xa/drama; nói rõ để tránh hứa số khách bằng đúng một lượt chơi. Kiểm tra core gồm chương 1–5, phí/fixed, thời tiết, giới hạn công suất, migrate và Worker.
+
+## Đối chiếu ngày 2 và khoảng tô — 02/10/2026
+
+Người dùng yêu cầu rà lại core và thêm min–max. Giá chọn theo lợi nhuận trung bình sau chi phí. Hiển thị riêng số dự đoán theo công thức game trước mở cửa (không giới hạn sức bếp/nhịp app) và số tô thực giao trung bình; min/max phải là cực trị số tô của đúng tập 256 seed cuối, không phải CI lợi nhuận hoặc bảo đảm thực tế. Test RED trước GREEN theo skill TDD được người dùng gọi lần này. Repro ngày 2, 5 decor, kim chi 30k, 3 topping, giả định 5 sao/30 đánh giá: dự đoán game 37 và khoảng 28–29 tô trung bình có thể đồng thời đúng. Giữ phạm vi mobile gọn, không mở rộng lưu trữ.

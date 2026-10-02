@@ -83,3 +83,18 @@ Kiểm tra cần thêm: chương 1 không có khách tại quán và có app dù
 ## Kết quả triển khai
 
 Engine/giao diện đã cập nhật các quy tắc chương trên, phân biệt lượt nhận app/khách tại quán và số tô thực giao. Bộ kiểm tra core bao phủ 5 chương và 1.000 seed cho ngày đầu kim chi 30k: trung bình 22,688 tô, phạm vi 20–25, có 140 seed giao 24 tô. Đây là đối chiếu với tốc độ và menu mặc định, không tái lập chính xác phiên chơi của người dùng. Tô hướng dẫn đầu game có đồng hồ tạm dừng chưa mô phỏng; các giới hạn cũ vẫn được ghi trong giao diện/README. Xem tasks/verification.md cho checks và smoke mobile.
+
+## Rà lại core và số dự đoán ngày 2
+
+Kiểm tra lại ngày 02/10: HTML vẫn trỏ cùng bundle, SHA256 không đổi. Đọc lại wi/so, rt, io, Ls/ae, $s, Cc/Se/ml, pc/Ee, Ws/Ks, đánh giá và giao món/fee/tip. Giá nguyên liệu, phân bố topping, thời hạn và quy tắc chương đã ghi ở trên giữ nguyên.
+
+- `so() = round(210 × wi() / 10 × 0,95)`: công thức chung dùng trước nhập hàng, không phụ thuộc kênh bán hoặc sức bếp. Source vẫn dùng nó khi chương 1 chỉ nhận app. App thực tế có lượt đầu ở giây 10, dừng nhận trước giây 200, interval `22/wi × 0,55 × U(0,7;1,3)` ở bếp nhà. Vì vậy không thể so trực tiếp số so() với tô thực giao.
+- Fixture đối chiếu: LV1/chương 1, ngày 2, giả định 5 sao/30 đánh giá cùng mức, 5 đồ trả tiền, kim chi 30.000, bò 22.000, xúc xích 12.000, rau 7.000; action 0,45, overhead 1,2. Thu hút đầu ngày 1,830286; game dự đoán 37; 256 seed cuối phục vụ trung bình 28,800781 tô app, min 27, max 32. Chưa có đủ toàn bộ trạng thái thực tế của người dùng để nhận đây là tái lập tuyệt đối phiên chơi.
+- Dự đoán trước cửa dùng LED 0,25×0,45 và buzzNext; không áp sàn bẩn trong ca. Engine mô phỏng vẫn dùng LED theo thời điểm, buzz và bẩn của ca. Sự kiện auto chưa xác định được hiển thị bằng trung bình dự đoán theo từng sự kiện rút trong batch.
+- Sửa default thu hút của engine: reviews=0 phải dùng 4 sao, kể cả caller gửi một mức sao khác. Trước đây UI đã chuẩn hóa nhưng helper core dùng s.stars, có thể lệch chỉ số thu hút đầu ngày.
+- Giá tốt nhất tiếp tục chọn theo lợi nhuận trung bình sau chi phí trên 160 ngày của finalist, sau đó đánh giá lại bằng 256 seed mới. Không chọn theo số tô trung bình.
+- `servedMin/servedMax` là cực trị số tô thực giao của đúng tập seed trong batch, không phải khoảng tin cậy hoặc min/max lý thuyết. Thực tế có thể nằm ngoài mẫu.
+
+Kiểm chứng: 7 test TDD ở check-forecast.cjs có RED trước GREEN; checks cũ core/Worker/UI đều qua, Worker có thêm fixture ngày 2 và kiểm tra min/max, xếp hạng theo lợi nhuận. Một phép đối chiếu tại máy chạy riêng hàm `wi` trích từ bundle qua 600 cấu hình (không chạy toàn bộ game) khớp engine với sai số <1e-10: level/chương, sao/no reviews, decor, trang bị/menu/LED, event, giá sàn/trần, buzz, bẩn, preview/sell. Script đối chiếu cục bộ /tmp/mi-cay-core-oracle.cjs; không đưa source bundle vào repo.
+
+Core vẫn là mô hình phục vụ lý tưởng đã công khai; audit này không chứng minh mọi nhánh của game giống hệt mô phỏng. Không giả lập drama, giao xa, thiếu hàng, phản hồi, rửa tô hoặc lên cấp giữa ca. Lợi nhuận mô hình là vốn phần tiêu thụ, còn tiền/lãi game có thể phản ánh nhập tồn kho và nhiệm vụ/thưởng.
