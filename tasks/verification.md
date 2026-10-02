@@ -38,3 +38,36 @@ Code 2.3.8 `634780a` đã push lên origin/main. Chưa xác nhận GitHub Pages 
 - Không mở rộng ma trận UI hoặc dependencies. Dự đoán 37 không phải số đơn app cam kết; min/max là mẫu 256 ngày, không giới hạn lý thuyết.
 
 Bản core/UI `ec6cb1c` đã push lên origin/main. Chưa kiểm tra Pages triển khai.
+
+
+## Gia truyền — hoàn tất và kiểm chứng 02/10/2026
+
+Người dùng duyệt spec, plan/task và yêu cầu code toàn bộ rồi test kỹ. Làm tuần tự S1–S6; không tuyên bố RED trước code ở đợt này.
+
+### Thay đổi
+
+- `secret` lưu trạng thái/nồi/ngày; record cũ mặc định none. Input mobile thu gọn; đổi ngày hoặc menu/level không còn hợp lệ thì bỏ hiệu ứng, đánh dấu kết quả cũ. Save best effort.
+- Nhóm hoàn tất: +1 sao nếu có tô đúng nồi và rating <5; online có sao nhưng không tip gia truyền. Tại quán 2k/tô match sau hũ tip và trước mèo/payday; reviewer ghi rating cuối ba lần. Nhóm giao dở/bỏ về không nhận thưởng hoàn tất. Tách số tô match đã giao, match hoàn tất, nhóm thực nhận sao và tip trực tiếp.
+- Optimize dùng trạng thái thật; comparator so none/từng nồi giả định đúng trên cùng giá và 256 seed. Khóa/active chỉ so nồi đã chọn; hết lượt/ngày <3 không đề xuất. Không mutate input; không chạy full optimize riêng 9 nồi; uncertainty dùng chênh lệch từng cặp seed.
+- Source 2.3.9: literal 32 nguyên liệu/20 trang bị/6 nhân viên, giá/vốn/hạn dùng/phí mở/mốc level/traffic/need/lương, 10 sự kiện và 7 tham số nền khớp data sau chuẩn hóa giá trị thiếu. Đọc các nhánh đang mô phỏng, audit ghi rõ phạm vi; không đưa bundle vào repo, không đổi catalog.
+
+### Kiểm tra thực tế — PASS
+
+- `node --test check-secret.cjs`: **15/15**. Nhóm 1–3 tô với 0..n match cho cả 9 nước lèo; sao đã 5, chê đắt/bù rẻ, hũ tip/tô sứ/mèo/payday, reviewer, nhóm chưa xong, ngày 1–2/stale/locked/exhausted, migration và giá invalid.
+- Ma trận riêng 9 nồi × 3 kênh × có/không buff × 12 seed = **648** ngày kiểm tra ledger/counts. Menu trộn 5 mốc chương × 4 biến thể × 16 seed = **320** ngày kiểm tra thêm, có trường hợp giao dở, quá tải, topping/menu màu/sao thấp/giá cao/payday/reviewer/rain. Các batch kiểm tra min–max dùng đúng seed mô phỏng.
+- Comparator đủ 9 nồi + none, mỗi phương án 256 seed: stats khớp batch độc lập ở cùng giá/seed, ranking theo profit, không mutate; single-broth và trường hợp không có lợi ích báo bất định đúng.
+- Hồi quy trực tiếp **600** lượt không gia truyền so toàn bộ output cũ (bỏ 4 trường thống kê mới): giống engine trước cập nhật theo seed. Lưu 6 fixture kết quả cũ cố định trong `check-secret.cjs` để bảo vệ RNG và sổ tiền.
+- `node check.cjs`: core 5 chương, traffic/capacity/fee/cost/rent/overload PASS; 1.000 ngày LV1/kimchi30k giữ mean22.688, min20/max25, 140 ngày có đúng24 tô.
+- `node --test check-forecast.cjs`: **7/7**, giữ repro ngày2 dự đoán37 và số tô thực giao trung bình28.8; phân biệt forecast/min–max/CI.
+- `node check-worker.cjs`: **6 cấu hình**, Worker khớp engine gồm LV1/ngày2/LV9, active online, locked tomyum, full menu active riêu/payday cùng hũ tip/tô sứ/mèo/menu/nồi; stats active khớp hàng comparator tương ứng. Progress/request id, error config và mã topping làm nồi gia truyền bị chặn.
+- `node check-ui.cjs`, `node --check engine.js`, `node --check app.js`, `node --check worker.js`, `git diff --check`: PASS. UI check chạy lại sau sửa câu thông báo một nồi.
+- Smoke browser thực 390×844: ngày3 → active kimchi → Tìm giá qua Worker → đọc kết quả → reload còn active → đổi ngày4 thành none và stale → trả ngày2 ban đầu. Console warn/error trống. Giá phía trên tính active, online tip0; thẻ so sánh đọc được trên mobile. Viewport override đã reset.
+- Ảnh kiểm chứng: `/Users/khoadanganh/Downloads/mi-cay-gia-truyen-mobile.jpg`. Ca smoke LV1/chương1/day3, 5sao/30reviews/decor5, kimchi30k/bo22k/xucxich12k/rau7k và event auto: active mean34.3 tô/min25/max46, tip gia truyền0, profit636241; cùng giá none profit633394, delta2846, CI1571..4122. Đây là cấu hình minh họa, không phải kết quả đảm bảo cho mọi quán.
+
+Lần chạy đầu có một assertion fixture sai: chọn chương tại quán cho trường hợp giả định không có lợi ích, dù tại quán luôn thêm tip2k. Đổi fixture sang online nhanh/giá rẻ; chạy lại đầy đủ PASS. Không bỏ hoặc hạ tiêu chí test để che lỗi.
+
+### Rà chất lượng và giới hạn
+
+Rà diff theo correctness/readability/architecture/security/performance: dùng một helper rating/tip trong simulate và tests, không có engine lợi nhuận thứ hai; validate input/Worker snapshot, encode tên món; không thêm dependency/network trong app; so sánh bị chặn ở tối đa10×256 lượt và chạy nền. Không có issue bắt buộc còn mở.
+
+Giới hạn giữ nguyên: pipeline bếp lý tưởng, đủ hàng, sai số tốc độ/thứ tự thao tác và sao đầu ngày xấp xỉ, không mô phỏng drama/du lịch/giao xa/reply/đổi level giữa ca. Không giải minigame hoặc tính xác suất nhớ đúng; một ngày, cùng bảng giá, tối ưu trong tập đã thử. Min–max là mẫu; CI chỉ mô tả nhiễu mô phỏng, không sai số mô hình. Push và Pages là các bước riêng; chỉ xác nhận deployment khi có bằng chứng.

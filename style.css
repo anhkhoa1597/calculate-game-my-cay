@@ -54,3 +54,13 @@ footer{padding:24px 32px;color:var(--muted);font-size:12px;border-top:1px solid 
 @media(max-width:767px){body.editing .calculatebar{position:static;border:0;padding:0;grid-template-columns:1fr}body.editing .calculatebar nav{display:none}}
 
 .alternatives{padding-left:24px}.alternatives li{margin:16px 0}.alternatives dl{margin:0}.alternatives dl div{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--line)}.alternatives dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* Secret comparisons stay readable without a wide table on mobile. */
+.secret-options{list-style:none;padding:0;display:grid;gap:12px}
+.secret-options li{border:1px solid var(--line);border-radius:12px;padding:14px}
+.secret-options h3{margin:0 0 10px;font-size:15px}
+.secret-options dl{margin:0;display:grid;gap:8px}
+.secret-options dl div{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.secret-options dt{flex:1;min-width:0}
+.secret-options dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;max-width:55%}
+.secret-result summary{white-space:normal}

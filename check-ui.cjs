@@ -36,3 +36,11 @@ raw=JSON.stringify({...legacy,chapter:1});assert.equal(UI.restore(storage).state
 UI.persist(storage,UI.restore(storage).state);assert.equal(UI.restore(storage).state.chapter,1);
 raw=JSON.stringify({...legacy,level:1,chapter:3});assert(UI.restore(storage).error);
 console.log('PASS: migrate cấu hình thiếu chương, giữ chương thấp khi level cao, lưu lại chương, chặn chương vượt cấp.');
+
+const secretState={...M.defaults(),day:3,secret:{day:3,broth:'kimchi',status:'active'}};
+UI.persist(storage,secretState);assert.deepEqual(UI.restore(storage).state.secret,secretState.secret);
+raw=JSON.stringify({...secretState,day:4});assert.deepEqual(UI.restore(storage).state.secret,{day:4,broth:null,status:'none'});
+const reduced={...secretState,level:1,secret:{day:3,broth:'tomyum',status:'active'}};
+assert.deepEqual(UI.normalizeSecret(reduced),{day:3,broth:null,status:'none'});
+assert.throws(()=>UI.persist({setItem(){throw Error('quota');}},secretState),/quota/);
+console.log('PASS: gia truyền tự nhớ, đổi ngày bỏ buff, giảm cấp/mất nồi hạ trạng thái, save lỗi không làm sai state.');

@@ -21,7 +21,7 @@ Rồi mở http://127.0.0.1:8765.
 
 ## Mô hình
 
-Quy tắc cập nhật theo source game 2.3.8 `https://aenhatrang.com/g/0b73001557557d1e26f9.js` ngày 02/10/2026. Giá/vốn và catalog đối chiếu không đổi so với 27/09/2026. Xem [báo cáo source](audits/game-2.3.8.md). `game-data.js` chứa toàn bộ 21 bảng dữ liệu đã trích trong cuộc trao đổi. Giao diện có phần tra cứu.
+Các quy tắc đang mô phỏng đã đối chiếu source game 2.3.9 `https://aenhatrang.com/g/78326809a3f7aa01996b.js` ngày 02/10/2026, có tính gia truyền. Giá/vốn và catalog không đổi. Xem [audit gia truyền và phạm vi đối chiếu](audits/secret-broth-2.3.9.md) và [audit chương trước đó](audits/game-2.3.8.md). `game-data.js` chứa toàn bộ 21 bảng dữ liệu đã trích trong cuộc trao đổi. Giao diện có phần tra cứu.
 
 Chương 1 chỉ online, 3 đơn chờ, nhịp app ×0,55, không tiền thuê; chương 2 có 2 chỗ, không thuê, bonus mưa/nóng ×1,15; chương 3–5 có 3 chỗ và thuê 40.000đ/ngày. Thêm bàn thành 4 chỗ từ chương 2; app các chương sau cần mua và có 2 đơn chờ. Phí app 20%, không tip app thường. Cấp chỉ giới hạn chương; hoàn thành nhiệm vụ mới chuyển chương. Cấu hình cũ thiếu chương tạm suy theo cấp và hiện nhắc kiểm tra lại.
 
@@ -33,13 +33,14 @@ Dự đoán trước mở cửa trong source (`so`) là `round(210 × wi() / 10 
 
 “Tốt nhất” trong tập đã thử, mục tiêu lợi nhuận một ngày, không phải tối ưu toàn cục hay cam kết kết quả trong game. Khoảng tin cậy chỉ phản ánh ngẫu nhiên mô phỏng. Tốc độ thực tế, thứ tự thao tác và các cơ chế không mô phỏng tạo sai số riêng.
 
-Bếp dùng pipeline lý tưởng: có nguyên liệu đủ, thao tác đúng, mì được lấy ở vùng chín, duy trì nồi đều và phục vụ đơn sắp hết hạn. Bảng tiêu thụ là trung bình phần đã bán, không phải lượng tồn kho đủ cho mọi trường hợp. Hao hụt thêm có ô nhập riêng. Không mô phỏng tô hướng dẫn đầu game (đồng hồ game tạm dừng), thiếu hàng, drama ngẫu nhiên, đổi yêu cầu, mặc cả, giao xa, công thức bí truyền, khách du lịch, nhiệm vụ/thưởng, phản hồi đánh giá hoặc lên cấp giữa ngày. Sale nguyên liệu không điều chỉnh giá vốn mua hàng trong mô hình chi phí tiêu thụ này. Không tính phí đầu tư trang bị/mở món.
+Bếp dùng pipeline lý tưởng: có nguyên liệu đủ, thao tác đúng, mì được lấy ở vùng chín, duy trì nồi đều và phục vụ đơn sắp hết hạn. Bảng tiêu thụ là trung bình phần đã bán, không phải lượng tồn kho đủ cho mọi trường hợp. Hao hụt thêm có ô nhập riêng. Không mô phỏng tô hướng dẫn đầu game (đồng hồ game tạm dừng), thiếu hàng, drama ngẫu nhiên, đổi yêu cầu, mặc cả, giao xa, khách du lịch, nhiệm vụ/thưởng, phản hồi đánh giá hoặc lên cấp giữa ngày. Sale nguyên liệu không điều chỉnh giá vốn mua hàng trong mô hình chi phí tiêu thụ này. Không tính phí đầu tư trang bị/mở món.
 
 Kiểm tra tính toán:
 
 ```sh
 node check.cjs
 node --test check-forecast.cjs
+node --test check-secret.cjs
 node check-worker.cjs
 node check-ui.cjs
 node --check app.js
@@ -51,3 +52,9 @@ git diff --check
 Kiểm tra gồm công thức thu hút, ngưỡng phạt giá, cấu hình, tái lập ngẫu nhiên, khách quá tải, công suất và sổ lợi nhuận. Không có dependency bên ngoài.
 
 Giao diện ưu tiên điện thoại: nhập quán, tìm/lọc món không dấu, tìm giá, xem sức bếp/mất khách rồi dùng giá. Desktop dùng cùng chức năng. HTTP(S) tính nền bằng Worker; mở file trực tiếp có fallback tính trên trang và có thể chậm. Tra cứu 21 bảng data chỉ dựng khi mở. Kiểm tra UI giới hạn ở smoke mobile khoảng 390px, liếc 320px và mở desktop; không bắt buộc Lighthouse hoặc ma trận thiết bị.
+
+Nước lẩu gia truyền (source 2.3.9): mở từ ngày 3 sau hướng dẫn. Chọn trạng thái đúng với game: chưa thử, đã chọn còn lượt, hết lượt, hoặc đã làm đúng; một nồi hiệu lực một ngày. Nhóm hoàn tất có tô đúng nồi được +1 sao (tối đa 5); tại quán thêm 2.000đ/tô trùng, sau hũ tip và trước payday ×2. Online chỉ có hiệu ứng sao. Nhóm giao dở/bỏ về không nhận thưởng hoàn tất. Gia truyền không trực tiếp đổi giá vốn/giá mặc định/chọn topping/tốc độ hoặc hệ số khách; sao mới mới ảnh hưởng thu hút trong ca.
+
+Chưa thử: sau tìm giá, so không gia truyền với từng nước lèo đang bán giả định làm đúng, cùng bảng giá và 256 seed. Tối đa 10 kịch bản, xếp theo lợi nhuận trung bình; báo chưa rõ khi khoảng chênh lệch cặp seed chứa 0. Đã chọn chỉ so nồi bị khóa; hết lượt không khuyên đổi; đã đúng thì giá đề xuất tính buff thật và so none chỉ để giải thích. Đây là đề xuất có điều kiện trên cùng bảng giá, không phải tìm tối ưu toàn bộ giá+nồi. Công cụ không giải minigame, không tính xác suất nhớ đúng và không tự bật hiệu ứng. Sau khi làm đúng trong game, khai báo active và tìm giá lại.
+
+Các bài `check-secret.cjs` kiểm tra riêng 9 nồi, nhóm 1–3 tô, các kênh bán, tip/sao/thưởng, trạng thái, nhiều menu/quá tải và comparator. Audit nguồn ở `audits/secret-broth-2.3.9.md`; kết quả chạy thực và giới hạn ở `tasks/verification.md`.

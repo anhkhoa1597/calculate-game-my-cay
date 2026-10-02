@@ -1,4 +1,4 @@
-/* Rules checked: aenhatrang.com/g/0b73001557557d1e26f9.js (2.3.8), 02/10/2026. Catalog unchanged from 27/09/2026. */
+/* Modeled rules checked: aenhatrang.com/g/78326809a3f7aa01996b.js (2.3.9), 02/10/2026. See audits/secret-broth-2.3.9.md for scope. */
 (function(root){
 'use strict';
 const data=typeof module==='object'?require('./game-data.js'):GAME_DATA;
@@ -12,7 +12,7 @@ const has=(s,id)=>s.upgrades.includes(id), hired=(s,id)=>s.staff.includes(id),me
 const maxChapter=level=>level>=10?5:level>=8?4:level>=5?3:level>=3?2:1;
 const chapter=s=>s.chapter??maxChapter(s.level);
 function service(s){const ch=chapter(s);return {chapter:ch,seats:ch===1?0:has(s,'seat4')?4:ch===2?2:3,app:ch===1||has(s,'app'),appSlots:ch===1?3:2,rent:ch>=3?40000:0,appPace:ch===1?.55:1};}
-function defaults(){return {level:1,chapter:1,day:1,stars:4,reviews:0,action:.45,extra:1.2,decor:0,pet:false,dirty:false,noisy:false,buzz:0,event:'auto',broths:['kimchi'],tops:['bo','xucxich'],upgrades:[],staff:[],safe:true,waste:0,prices:Object.fromEntries(items.map(x=>[x.id,x.base]))};}
+function defaults(){return {level:1,chapter:1,day:1,stars:4,reviews:0,action:.45,extra:1.2,decor:0,pet:false,dirty:false,noisy:false,buzz:0,event:'auto',secret:{day:1,broth:null,status:'none'},broths:['kimchi'],tops:['bo','xucxich'],upgrades:[],staff:[],safe:true,waste:0,prices:Object.fromEntries(items.map(x=>[x.id,x.base]))};}
 function validate(s){
  for(const k of ['level','chapter','day','reviews','decor'])if(!Number.isInteger(s[k]))throw Error('Thông số phải là số nguyên: '+k);
  for(const k of ['pet','dirty','noisy','safe'])if(typeof s[k]!=='boolean')throw Error('Thông số không hợp lệ: '+k);
@@ -23,6 +23,11 @@ function validate(s){
  for(const id of [...s.broths,...s.tops])if(!Number.isFinite(s.prices[id])||s.prices[id]<1000||s.prices[id]>byId[id].base*3||s.prices[id]%1000)throw Error('Giá phải theo bước 1.000đ và trong giới hạn game: '+byId[id].name);
  if(!['auto',...Object.keys(events)].includes(s.event))throw Error('Sự kiện không hợp lệ.');
  for(const x of [...items,...upgrades,...staff])if((s.broths.includes(x.id)||s.tops.includes(x.id)||s.upgrades.includes(x.id)||s.staff.includes(x.id))&&x.level>s.level)throw Error(x.name+' cần cấp '+x.level+'.');
+ const secret=s.secret;
+ if(secret!==undefined){
+  if(!secret||typeof secret!=='object'||Array.isArray(secret)||!['none','locked','exhausted','active'].includes(secret.status)||!Number.isInteger(secret.day)||secret.day<1||secret.day>9999)throw Error('Trạng thái gia truyền không hợp lệ.');
+  if(secret.status==='none'?secret.broth!==null:!broths.some(x=>x.id===secret.broth&&x.level<=s.level&&s.broths.includes(x.id)))throw Error('Nồi gia truyền phải là nước lèo đã mở và đang bán.');
+ }
  if(has(s,'pot3')&&!has(s,'pot2'))throw Error('Nồi thứ ba cần nồi thứ hai.');
  return s;
 }
@@ -35,6 +40,27 @@ function traffic(s,p,t,stars=s.reviews?s.stars:4,event='normal',preview=false){
 function gameForecast(s,p,event=s.event==='auto'?(s.day>1&&[6,0].includes(s.day%7)?'weekend':'normal'):s.event){return Math.round(210*traffic(s,p,0,undefined,event,true)/10*.95);}
 function expensive(id,p,s){return p>(broths.some(x=>x.id===id)?60000:byId[id].base*1.5)*menu(s);}
 function patience(s){return (66+Math.min(s.level-1,8)*4)*(has(s,'fan')?1.25:1)*(has(s,'wifi')?1.12:1)*(has(s,'chair')?1.12:1)*(has(s,'tv')?1.1:1)*(s.pet?1.08:1);}
+// Only a successful recipe for this day affects completed orders.
+function secretBroth(s){const x=s.secret;return s.day>=3&&x?.status==='active'&&x.day===s.day&&broths.some(b=>b.id===x.broth&&b.level<=s.level&&s.broths.includes(b.id))?x.broth:null;}
+function completeGroup(s,p,g,waited,event,random){
+ if(g.index!==g.bowls.length)return null;
+ const ids=b=>[b.broth,...b.tops],pricey=g.bowls.some(b=>ids(b).some(id=>expensive(id,p[id],s)));
+ let rating=5-(waited>.5?1:0)-(waited>.82?1:0)-(pricey?1:0)-(random()<.1?1:0);
+ const cheap=g.bowls.reduce((n,b)=>n+ids(b).reduce((a,id)=>a+p[id],0)/ids(b).reduce((a,id)=>a+byId[id].base,0),0)/g.bowls.length<.88;
+ if(!pricey&&cheap&&rating<5)rating++;
+ const broth=secretBroth(s),matched=broth?g.bowls.filter(b=>b.broth===broth).length:0,boost=matched>0&&rating<5?1:0;
+ rating=clamp(rating+boost,1,5);
+ let tips=0,secretTips=0;
+ if(!g.online){
+  tips=Math.round(Math.max(0,1-waited)*4)*1000*g.bowls.length*(event==='challenge'&&g.bowls.some(b=>b.spice===7)?2:1);
+  if(has(s,'tipjar'))tips=Math.round(tips*1.5/1000)*1000;
+  if(rating>=4&&has(s,'bowlset'))tips+=3000*g.bowls.length;
+  secretTips=2000*matched;tips+=secretTips;
+  if(rating>=4&&has(s,'luckycat')&&random()<.25)tips+=5000*g.bowls.length;
+  if(event==='payday'){tips*=2;secretTips*=2;}
+ }
+ return {rating,tips,secretTips,secretCompleted:matched,secretRatingGroups:boost,reviewWeight:g.vip?3:1};
+}
 function rng(seed){let a=seed>>>0;return ()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;};}
 function simulate(s,p,seed){
  const random=rng(seed),pick=(vals,w)=>{let r=random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<vals.length;i++){r-=w[i];if(r<0)return vals[i];}return vals.at(-1);};
@@ -44,7 +70,7 @@ function simulate(s,p,seed){
  const reviews=Array(Math.round(s.reviews)).fill(s.stars),recent=[],groups=[],pot=Array(pots).fill(null),counts=Object.fromEntries(items.map(x=>[x.id,0]));
  let t=0,spawn=1,on=10,basket=0,current=null,helper=1,burst=false,vipPending=false,vipDone=false;
  const fixed=15000+settings.rent+upgrades.reduce((n,x)=>n+(has(s,x.id)?x.daily:0),0)+staff.reduce((n,x)=>n+(hired(s,x.id)?x.daily:0),0);
- const r={sales:0,cost:0,fee:0,tips:0,fixed,waste:s.waste,served:0,appServed:0,dineServed:0,arrivals:0,appArrivals:0,dineArrivals:0,admitted:0,full:0,priceLost:0,timeout:0,unfinished:0,wait:0,ratings:0,ratingCount:0,busy:0,counts,event};
+ const r={sales:0,cost:0,fee:0,tips:0,fixed,waste:s.waste,served:0,appServed:0,dineServed:0,arrivals:0,appArrivals:0,dineArrivals:0,admitted:0,full:0,priceLost:0,timeout:0,unfinished:0,wait:0,ratings:0,ratingCount:0,busy:0,counts,event,secretServed:0,secretCompleted:0,secretRatingGroups:0,secretTips:0};
  const stars=()=>reviews.length?reviews.reduce((a,b)=>a+b,0)/reviews.length:4;
  const review=(v,vip=false)=>{for(let j=0;j<(vip?3:1);j++){reviews.unshift(v);if(reviews.length>30)reviews.pop();}r.ratings+=v;r.ratingCount++;};
  const weighted=ids=>pick(ids,ids.map(id=>1/(1+1.5*recent.reduce((n,b)=>n+(b.broth===id?1:0)+(b.tops.includes(id)?1:0),0))));
@@ -72,12 +98,9 @@ function simulate(s,p,seed){
   groups.push({online,bowls,index:0,arrival:t,max,deadline:t+max/drain,drain,vip});r.admitted++;
  };
  const finish=g=>{
-  const waited=(t-g.arrival)*g.drain/g.max;
-  let rating=5-(waited>.5?1:0)-(waited>.82?1:0)-(g.bowls.some(pricey)?1:0)-(random()<.1?1:0);
-  const cheap=g.bowls.reduce((n,b)=>n+sale(b)/ids(b).reduce((a,id)=>a+byId[id].base,0),0)/g.bowls.length<.88;
-  if(!g.bowls.some(pricey)&&cheap&&rating<5)rating++;
-  review(clamp(rating,1,5),g.vip);r.wait+=t-g.arrival;
-  if(!g.online){let tip=Math.round(Math.max(0,1-waited)*4)*1000*g.bowls.length*(event==='challenge'&&g.bowls.some(b=>b.spice===7)?2:1);if(has(s,'tipjar'))tip=Math.round(tip*1.5/1000)*1000;if(rating>=4&&has(s,'bowlset'))tip+=3000*g.bowls.length;if(rating>=4&&has(s,'luckycat')&&random()<.25)tip+=5000*g.bowls.length;if(event==='payday')tip*=2;r.tips+=tip;}
+  const outcome=completeGroup(s,p,g,(t-g.arrival)*g.drain/g.max,event,random);
+  review(outcome.rating,outcome.reviewWeight===3);r.wait+=t-g.arrival;
+  for(const key of ['tips','secretTips','secretCompleted','secretRatingGroups'])r[key]+=outcome[key];
   groups.splice(groups.indexOf(g),1);
  };
  // ponytail: demand-driven noodle pipeline assumes player keeps manual pots running and collects good noodles.
@@ -95,7 +118,7 @@ function simulate(s,p,seed){
   for(let j=0;j<pot.length;j++)if(pot[j]===null&&basket+cooking<Math.min(3,demand)&&(!hired(s,'boil')||helper<=0)){pot[j]=t+cycle*(hired(s,'boil')?.64:.6);cooking++;helper=.8;}
   if(!current&&groups.length){const g=[...groups].sort((a,b)=>a.deadline-b.deadline)[0],b=g.bowls[g.index];const actions=3+(hired(s,'season')?0:1)+(hired(s,'topping')?0:b.tops.length)+b.spice+(hired(s,'boil')?0:1);current={g,b,remaining:s.extra+s.action*actions,noodle:false,cost:cost(b)};}
   if(current){r.busy+=.1;current.remaining-=.1;if(!current.noodle&&basket){basket--;current.noodle=true;}
-   if(current.remaining<=0&&current.noodle){const {g,b}=current;r.sales+=sale(b);r.fee+=g.online?Math.round(sale(b)*.2):0;r.cost+=cost(b);for(const id of ids(b))counts[id]++;r.served++;if(g.online)r.appServed++;else r.dineServed++;g.index++;current=null;if(g.index===g.bowls.length)finish(g);}
+   if(current.remaining<=0&&current.noodle){const {g,b}=current;r.sales+=sale(b);r.fee+=g.online?Math.round(sale(b)*.2):0;r.cost+=cost(b);for(const id of ids(b))counts[id]++;r.served++;if(b.broth===secretBroth(s))r.secretServed++;if(g.online)r.appServed++;else r.dineServed++;g.index++;current=null;if(g.index===g.bowls.length)finish(g);}
   }
   if(t>=210&&!groups.length)break;
  }
@@ -104,9 +127,33 @@ function simulate(s,p,seed){
  r.wait=r.ratingCount?r.wait/Math.max(1,r.admitted-r.timeout-r.unfinished):0;
  r.traffic=traffic(s,p,0,undefined,event);r.gameForecast=gameForecast(s,p,event);return r;
 }
-function batch(s,p,n=64,seed=7000){if(!Number.isInteger(n)||n<1)throw Error('Số lượt mô phỏng phải là số nguyên dương.');const runs=Array.from({length:n},(_,i)=>simulate(s,p,seed+i*7919)),a={};for(const key of Object.keys(runs[0]))if(typeof runs[0][key]==='number')a[key]=runs.reduce((v,r)=>v+r[key],0)/n;
+function summarize(runs){const n=runs.length,a={};for(const key of Object.keys(runs[0]))if(typeof runs[0][key]==='number')a[key]=runs.reduce((v,r)=>v+r[key],0)/n;
  a.servedMin=Math.min(...runs.map(r=>r.served));a.servedMax=Math.max(...runs.map(r=>r.served));
  a.counts=Object.fromEntries(items.map(x=>[x.id,runs.reduce((v,r)=>v+r.counts[x.id],0)/n]));a.se=n===1?0:Math.sqrt(runs.reduce((v,r)=>v+(r.profit-a.profit)**2,0)/(n-1)/n);a.n=n;return a;}
+function batch(s,p,n=64,seed=7000){if(!Number.isInteger(n)||n<1)throw Error('Số lượt mô phỏng phải là số nguyên dương.');return summarize(Array.from({length:n},(_,i)=>simulate(s,p,seed+i*7919)));}
+function pairedDifference(a,b){
+ if(a.length!==b.length||!a.length)throw Error('Các mẫu so sánh phải cùng số ngày.');
+ const deltas=a.map((x,i)=>x.profit-b[i].profit),delta=deltas.reduce((x,y)=>x+y,0)/deltas.length;
+ const se=deltas.length===1?0:Math.sqrt(deltas.reduce((sum,x)=>sum+(x-delta)**2,0)/(deltas.length-1)/deltas.length);
+ return {delta,se,low:delta-1.96*se,high:delta+1.96*se};
+}
+async function compareSecret(s,p,progress=()=>{}){
+ validate({...s,prices:p});
+ const status=s.secret?.day===s.day?(s.secret?.status??'none'):'none';
+ if(s.day<3||status==='exhausted')return {mode:s.day<3?'unavailable':'exhausted',rows:[],best:null,uncertain:false};
+ const candidates=status==='none'?s.broths:[s.secret.broth],none={...s,secret:{day:s.day,broth:null,status:'none'}};
+ const run=config=>Array.from({length:256},(_,i)=>simulate(config,p,9000000+i*7919)),baseline=run(none),rows=[{broth:null,stats:summarize(baseline),difference:{delta:0,se:0,low:0,high:0}}],samples=new Map([[null,baseline]]);
+ for(const [i,broth] of candidates.entries()){
+  progress('So gia truyền: '+(i+1)+'/'+candidates.length);await new Promise(r=>setTimeout(r,0));
+  const runs=run({...s,secret:{day:s.day,broth,status:'active'}});samples.set(broth,runs);
+  rows.push({broth,stats:summarize(runs),difference:pairedDifference(runs,baseline)});
+ }
+ rows.sort((a,b)=>b.stats.profit-a.stats.profit);
+ const best=rows[0],runner=rows[1],lead=runner?pairedDifference(samples.get(best.broth),samples.get(runner.broth)):null;
+ // Every challenger must be distinguishable, not just the second by mean.
+ const uncertain=rows.slice(1).some(row=>pairedDifference(samples.get(best.broth),samples.get(row.broth)).low<=0);
+ return {mode:status,rows,best:best.broth,uncertain,lead};
+}
 const rounded=(id,p)=>clamp(Math.round(p/1000)*1000,1000,Math.floor(byId[id].base*3/1000)*1000);
 async function optimize(s,progress=()=>{}){
  validate(s);const m=menu(s),seen=new Set(),all=[],active=[...s.broths,...s.tops];
@@ -127,7 +174,8 @@ async function optimize(s,progress=()=>{}){
  for(let j=0;j<finalists.length;j++){finalists[j].stats=batch(s,finalists[j].prices,160,800000);progress('Kiểm chứng phương án '+(j+1)+'/8');await new Promise(r=>setTimeout(r,0));}
  const best=finalists.sort((a,b)=>b.stats.profit-a.stats.profit)[0];
  const baseline=batch(s,s.prices,256,9000000),validated=batch(s,best.prices,256,9000000);
- return {prices:best.prices,stats:validated,baseline,alternatives:finalists.slice(0,5),tested:all.length};
+ const secret=await compareSecret(s,best.prices,progress);
+ return {prices:best.prices,stats:validated,baseline,alternatives:finalists.slice(0,5),tested:all.length,secret};
 }
-const api={maxChapter,service,data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,gameForecast,expensive,patience,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
+const api={maxChapter,service,data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,gameForecast,expensive,patience,secretBroth,completeGroup,pairedDifference,compareSecret,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
 })(typeof window!=='undefined'?window:globalThis);

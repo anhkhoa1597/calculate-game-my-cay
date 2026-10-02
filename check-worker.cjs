@@ -13,7 +13,10 @@ async function run(config, id) {
 }
 (async () => {
   const dayTwo={...M.defaults(),day:2,stars:5,reviews:30,decor:5,tops:['bo','xucxich','rau'],prices:{...M.defaults().prices,kimchi:30000,bo:22000,xucxich:12000,rau:7000}};
-  for (const config of [M.defaults(),dayTwo, {...M.defaults(), level:9, chapter:4, day:30, reviews:30, broths:M.broths.map(x=>x.id), tops:M.tops.map(x=>x.id)}]) {
+  const onlineSecret={...M.defaults(),day:3,event:'normal',secret:{day:3,broth:'kimchi',status:'active'}};
+  const locked={...M.defaults(),level:3,chapter:2,day:3,event:'normal',broths:['kimchi','tomyum'],secret:{day:3,broth:'tomyum',status:'locked'}};
+  const fullSecret={...M.defaults(),level:9,chapter:4,day:30,event:'payday',broths:M.broths.map(x=>x.id),tops:M.tops.map(x=>x.id),upgrades:['app','tipjar','bowlset','luckycat','menu','pot2','pot3'],secret:{day:30,broth:'rieu',status:'active'}};
+  for (const config of [M.defaults(),dayTwo,onlineSecret,locked,fullSecret, {...M.defaults(), level:9, chapter:4, day:30, reviews:30, broths:M.broths.map(x=>x.id), tops:M.tops.map(x=>x.id)}]) {
     const messages = await run(config, 17);
     assert(messages.some(m => m.type === 'progress'));
     assert(messages.every(m => m.id === 17));
@@ -21,6 +24,8 @@ async function run(config, id) {
     assert.equal(result.stats.n,256);assert.equal(result.baseline.n,256);
     for(const a of [result.stats,result.baseline]){assert(Number.isInteger(a.servedMin)&&Number.isInteger(a.servedMax));assert(a.servedMin<=a.served&&a.served<=a.servedMax);assert(Number.isFinite(a.gameForecast));}
     assert.deepEqual(result.prices,result.alternatives[0].prices);
+    if(config.secret?.status==='active'){assert.equal(result.secret.mode,'active');assert.deepEqual(result.stats,result.secret.rows.find(x=>x.broth===config.secret.broth).stats);}
+    if(config.secret?.status==='locked'){assert.equal(result.secret.mode,'locked');assert.equal(result.secret.rows.length,2);assert.equal(result.stats.secretTips,0);}
     assert(result.alternatives.every(x=>x.stats.profit<=result.alternatives[0].stats.profit));
     assert(result.alternatives.every(x=>x.stats.n===160));
     for(const id of [...config.broths,...config.tops]){assert.equal(result.prices[id]%1000,0);assert(!M.expensive(id,result.prices[id],config));}
@@ -29,5 +34,6 @@ async function run(config, id) {
   const bad = await run({...M.defaults(), broths:[]}, 18);
   assert.equal(bad.at(-1).type, 'error');
   assert.match(bad.at(-1).message, /nước lèo/);
-  console.log('PASS: Worker source khớp engine LV1/ngày2/LV9, min–max và chọn theo lợi nhuận, progress/request id và lỗi validation.');
+  const badSecret=await run({...onlineSecret,secret:{day:3,broth:'bo',status:'active'}},19);assert.equal(badSecret.at(-1).type,'error');assert.match(badSecret.at(-1).message,/gia truyền/);
+  console.log('PASS: Worker source khớp engine 6 cấu hình LV1/ngày2/LV9, active/locked, menu đầy đủ/payday, min–max, comparator, progress/request id và lỗi validation.');
 })().catch(e => { console.error(e); process.exitCode = 1; });

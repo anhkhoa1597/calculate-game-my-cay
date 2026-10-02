@@ -60,7 +60,7 @@ Phạm vi mới cho phép sửa engine/data: đối chiếu source → cập nh�
 
 ## Gia truyền — kế hoạch bổ sung 02/10/2026
 
-Spec gia truyền được người dùng duyệt bằng “chốt”. Phần này bổ sung công việc mới, giữ nguyên lịch sử R1–R6 đã hoàn tất. **Kế hoạch và task gia truyền đang chờ duyệt; chưa triển khai.** Dùng `SPEC.md:195` và `audits/secret-broth-2.3.9.md` làm căn cứ.
+Spec gia truyền được người dùng duyệt bằng “chốt”. Phần này bổ sung công việc mới, giữ nguyên lịch sử R1–R6 đã hoàn tất. **Người dùng đã duyệt kế hoạch/task và yêu cầu triển khai toàn bộ rồi kiểm thử kỹ ngày 02/10/2026.** Dùng `SPEC.md:195` và `audits/secret-broth-2.3.9.md` làm căn cứ.
 
 ### Quyết định kỹ thuật
 
@@ -84,7 +84,7 @@ S1 Đối chiếu source 2.3.9
   → S6 Hồi quy đầy đủ, tài liệu và hoàn tất
 ```
 
-S2 có đường nhập/lưu trạng thái; S3 làm hiệu ứng có ý nghĩa trong mô phỏng; S4 trả dữ liệu so sánh; S5 hiển thị dữ liệu ấy. Làm tuần tự. TDD RED–GREEN cho logic mới theo spec đã duyệt; các bài kiểm tra toàn hệ thống và smoke UI chạy cuối. Checkpoint nội bộ ghi bằng chứng, không thêm gate xin duyệt từng task.
+S2 có đường nhập/lưu trạng thái; S3 làm hiệu ứng có ý nghĩa trong mô phỏng; S4 trả dữ liệu so sánh; S5 hiển thị dữ liệu ấy. Làm tuần tự. Theo chỉ đạo mới nhất của người dùng, triển khai toàn bộ rồi chạy tests; không tuyên bố có bước RED trước code. Checkpoint nội bộ ghi bằng chứng, không thêm gate xin duyệt từng task.
 
 Danh sách việc chi tiết duy nhất nằm ở mục S1–S6 trong `tasks/todo.md`. Mỗi task tối đa khoảng 5 file; chỉ thay catalog nếu source chứng minh dữ liệu đã đổi. Không đổi provenance toàn core chỉ dựa trên audit gia truyền.
 
@@ -103,4 +103,4 @@ Danh sách việc chi tiết duy nhất nằm ở mục S1–S6 trong `tasks/tod
 
 Chạy các lệnh trong mục gia truyền của SPEC: `node --test check-secret.cjs`, core/forecast/Worker/UI, kiểm tra cú pháp và `git diff --check`. Smoke mobile một luồng nhập → tìm → đọc lợi ích → reload → đổi ngày. Ghi kết quả thật vào `tasks/verification.md`; cập nhật README theo phạm vi đã qua test. Commit/push theo quyền đã có; không tuyên bố Pages đã deploy khi chưa kiểm tra.
 
-Không có câu hỏi sản phẩm mới; phần còn chờ là duyệt kế hoạch và task để chuyển sang triển khai.
+Không có câu hỏi sản phẩm đang chặn; kế hoạch và task đã được duyệt.

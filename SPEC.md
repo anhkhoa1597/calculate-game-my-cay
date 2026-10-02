@@ -94,7 +94,7 @@ Giữ catalog, seed và số lượt kiểm chứng; cập nhật engine theo so
 - Lợi nhuận gồm vốn, phí app, tip, thuê nhà, điện/nước, điện trang bị, lương và hao hụt.
 - “Tốt nhất” chỉ trong tập bảng giá đã thử, theo mục tiêu lợi nhuận một ngày; không chứng minh tối ưu toàn cục hoặc dài hạn.
 - Khoảng tin cậy chỉ phản ánh ngẫu nhiên mô phỏng, không bao gồm sai số tốc độ và cơ chế chưa mô phỏng.
-- Catalog 27/09/2026 đã đối chiếu không đổi trong source 2.3.8 ngày 02/10/2026. Giữ giải thích giới hạn về thiếu hàng, nhiệm vụ/thưởng, drama, giao xa, mặc cả, công thức bí truyền, du lịch, phản hồi review, lên cấp giữa ngày và phí đầu tư.
+- Catalog 27/09/2026 đã đối chiếu không đổi trong source 2.3.8 ngày 02/10/2026. Giữ giải thích giới hạn về thiếu hàng, nhiệm vụ/thưởng, drama, giao xa, mặc cả, du lịch, phản hồi review, lên cấp giữa ngày và phí đầu tư.
 - File trực tiếp có fallback tính trên main thread và báo có thể chậm. Worker lỗi trả trang về trạng thái có thể dùng lại; không tự nhận kết quả của snapshot khác.
 
 ## 6. Stack, cấu trúc và code style
@@ -192,9 +192,9 @@ Tách chỉ số app/khách tại quán và cho xem giá hiện tại bên cạn
 
 Người dùng yêu cầu rà lại core và thêm min–max. Giá chọn theo lợi nhuận trung bình sau chi phí. Hiển thị riêng số dự đoán theo công thức game trước mở cửa (không giới hạn sức bếp/nhịp app) và số tô thực giao trung bình; min/max phải là cực trị số tô của đúng tập 256 seed cuối, không phải CI lợi nhuận hoặc bảo đảm thực tế. Test RED trước GREEN theo skill TDD được người dùng gọi lần này. Repro ngày 2, 5 decor, kim chi 30k, 3 topping, giả định 5 sao/30 đánh giá: dự đoán game 37 và khoảng 28–29 tô trung bình có thể đồng thời đúng. Giữ phạm vi mobile gọn, không mở rộng lưu trữ.
 
-## Bổ sung dự thảo: Nước lẩu gia truyền và so sánh các nồi
+## Bổ sung: Nước lẩu gia truyền và so sánh các nồi
 
-**Trạng thái: người dùng đã duyệt ngày 02/10/2026 (“chốt”); chưa triển khai code sản phẩm.** Cơ sở: audit `audits/secret-broth-2.3.9.md`. Các tiêu chí dưới đây chỉ thay giới hạn “không tính bí truyền” sau khi triển khai và kiểm chứng; không khẳng định bản đang chạy đã có tính năng.
+**Trạng thái: người dùng đã duyệt ngày 02/10/2026 (“chốt”); đã triển khai, kết quả kiểm chứng ở `tasks/verification.md`.** Cơ sở: audit `audits/secret-broth-2.3.9.md`. Phần này thay giới hạn “không tính bí truyền” của spec trước. Việc Pages đã triển khai hay chưa phải được kiểm tra riêng.
 
 ### Mục tiêu và giả định
 
@@ -241,7 +241,7 @@ secret: { day: 3, broth: 'kimchi', status: 'active' }
 
 ### Kiểm thử và nghiệm thu
 
-Dùng Node assert/node:test đang có; TDD RED trước GREEN cho logic mới. Không thêm dependency hay mục tiêu coverage mới. Tách test hiệu ứng tiền/sao xác định khỏi simulation ngẫu nhiên để bắt đúng thứ tự thưởng.
+Dùng Node assert/node:test đang có; Theo yêu cầu triển khai mới nhất: code hoàn tất rồi chạy kiểm thử kỹ, không tuyên bố có RED trước code. Không thêm dependency hay mục tiêu coverage mới. Tách test hiệu ứng tiền/sao xác định khỏi simulation ngẫu nhiên để bắt đúng thứ tự thưởng.
 
 - **G01:** Record cũ/default none giữ nguyên kết quả cũ theo seed; ngày 1–2, hết lượt hoặc khác ngày không được buff; nồi chưa mở/mã topping không hợp lệ bị chặn.
 - **G02:** Mỗi loại trong cả 9 nước lèo: test chạy độc lập khi đủ level, với/không buff; kiểm tra vốn từng món, fee, sao, tip, counts/min–max và profit identity. Test riêng kimchi, tomyum, tương đen, sữa phô mai, lẩu nấm, mala, tiêu xanh, gà lá é, riêu cua; không thay bằng một fixture all-menu.
@@ -274,8 +274,8 @@ git diff --check
 
 ### Ranh giới và câu hỏi còn lại
 
-- Luôn: đối chiếu source, validate trạng thái/ngày/nồi, test tiền/sao bằng TDD, giữ UI mobile và số lượt final 256, nêu rõ kịch bản giả định cùng giá.
+- Luôn: đối chiếu source, validate trạng thái/ngày/nồi, test tiền/sao xác định, giữ UI mobile và số lượt final 256, nêu rõ kịch bản giả định cùng giá.
 - Trao đổi trước: tối ưu đồng thời giá+nồi cho mọi kịch bản, tính xác suất thất bại minigame hoặc đưa bộ giải gia vị vào phạm vi.
 - Không: auto nhận làm đúng, thay đổi game, auto mua/bỏ nồi, nhân khách trực tiếp do buff, cộng 2k tip online thường, coi mẫu min/max là bảo đảm.
 
-Đã duyệt phạm vi **tính buff đã làm đúng + đề xuất nồi tại cùng bảng giá**, không bao gồm bộ giải minigame/tối ưu tổ hợp toàn bộ. Bước tiếp theo: duyệt phần kế hoạch gia truyền trong `tasks/plan.md` và các task tương ứng trong `tasks/todo.md`. Chưa thực hiện kiểm thử gia truyền hoặc thay engine ở bước spec/plan.
+Đã duyệt phạm vi **tính buff đã làm đúng + đề xuất nồi tại cùng bảng giá**, không bao gồm bộ giải minigame/tối ưu tổ hợp toàn bộ. Kế hoạch/task đã duyệt; người dùng yêu cầu triển khai toàn bộ rồi kiểm thử kỹ, thay cho thứ tự RED–GREEN ghi trước đó. Kết quả thực ở `tasks/verification.md`.
