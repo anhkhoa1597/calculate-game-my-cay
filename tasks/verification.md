@@ -100,3 +100,32 @@ Chỉ đạo cuối: triển khai tuần tự xong mới test, không chạy ki�
 Rà code theo code-review-and-quality: một engine tiền/sao, ranking chỉ nhận nồi hợp lệ, seed/giá giữa các nồi giống nhau, stats cuối không dùng nồi hạt giống. Giữ encode tên món, validate snapshot, Worker progress/id/lỗi; search và comparator có giới hạn, không thêm dependency/framework.
 
 Không chạy `check-ui.cjs`, browser, screenshot hay kiểm tra bàn phím theo yêu cầu. Các thay đổi UI được triển khai và rà source/cú pháp, không tuyên bố đã kiểm thử hành vi hoặc bố cục thực tế. Giữ giới hạn mô hình trước: pipeline lý tưởng, đủ nguyên liệu, tốc độ/sao đầu ngày xấp xỉ; không giải minigame. Đề xuất có giới hạn hai search, không chứng minh tối ưu toàn cục giá+nồi. Min–max là mẫu, CI chỉ phản ánh ngẫu nhiên mô phỏng. Push không đồng nghĩa xác nhận Pages đã deploy.
+
+## Kiểm tra UI/flow sau triển khai auto — 02/10/2026
+
+Người dùng cho phép test UI/flow và tự sửa lỗi, áp dụng TDD. Dùng trình duyệt thật Codex IAB trên localhost8765 (Chrome DevTools MCP không có trong session), native browser actions/locators và read-only DOM inspection. Không truy cập credentials. Không thay engine hay công thức.
+
+### Lỗi tái hiện trước khi sửa
+
+1. `.menu td input{width:100%}` áp cả checkbox: checkbox rộng132,76px, vùng tên0px, hàng hơn430px; tên xuống dòng từng chữ. `menuLayoutCheck` trong check-browser.cjs chạy trong browser báo FAIL trước sửa. Chỉ áp width100% cho input số; cùng check PASS sau reload.
+2. Màn hẹp:9 hàng tên/metadata dài vượt160px dù checkbox đã đúng. Cùng check báo FAIL tại viewport override320×740 (CSS innerWidth291px do zoom trình duyệt). Dành cột tên rộng hơn bằng hai cột, đưa giá đề xuất xuống dưới input ở breakpoint360px. Không hạ ngưỡng test; cả30 món PASS sau reload.
+3. Link lỗi thiếu nước lèo xuống hai dòng: tâm bounding box rơi vào li, không vào link; click tâm không chuyển màn. `errorLinksCheck` FAIL trước sửa. Đổi link thành inline-block tạo vùng chạm liền; test PASS, click cùng link chuyển Menu và focus menu-selection.
+
+Hai callback browser trong `check-browser.cjs` là test hồi quy DOM/layout thực, không phải Node runner. Dùng browser evaluate read-only để chạy nội dung callback khi panel/fixture tương ứng hiện. Không kiểm tra selector CSS để thay thế việc đo layout.
+
+### Flow/runtime đã kiểm chứng
+
+- Override390×844 (CSS innerWidth354px),320×740 (CSS291px),desktop1280×900 (CSS1163px). Screenshot và đo overflow: không tràn ngang; checkbox~18px. Đây là desktop browser đổi viewport, không thiết bị/keyboard vật lý.
+- Reset LV1 xác nhận; hủy reset giữ day3 và cấu hình. Quán/Menu/Kết quả chỉ hiện một vùng; đổi màn và Back giữ search/filter/giá. Reload giữ day/menu/giá đã dùng (filter/search chỉ giữ trong phiên, không yêu cầu qua reload).
+- Tìm `rau`, chọn rau; tìm không dấu `pho mai` ở LV9 hiện đúng2 món; chọn toàn bộ theo cấp đủ9 broth/21 topping. Giảm LV9 vềLV1 loại các món cấp cao, còn kimchi/bo/xucxich/rau; tomyum disabled.
+- Giá rau5500 không hợp lệ: submit mở Quán/focus errors; click link mở Menu, bỏ filter và focus price-rau. Sửa6000 rồi tính thành công.
+- Bỏ mọi broth: lỗi không cho tính; link lỗi chuyển Menu/focus menu-selection sau sửa vùng chạm. Chọn lại kimchi phục hồi.
+- Mở tốc độ, nhập action0: validation; click link focus action, details mở. Sửa0,45 rồi tính lại thành công. Một số locator exact label phải đổi sang ID vì lỗi inline được gắn vào label; đây là điều chỉnh test automation, không lỗi xử lý của app.
+- Tìm giá qua Worker: controls/menu inputs/nút tính disabled trong lúc tính; hoàn tất chuyển Kết quả, mở lại controls. Nồi gia truyền kimchi giả định thành công, đủ bảng giá4 món, lời/tô/min–max/forecast, details kết quả đóng mặc định. Dùng giá cập nhật menu (kimchi30k/bo22k/xucxich12k/rau7k), đánh dấu kết quả cũ; reload giữ giá.
+- Tra cứu dựng đủ21 bảng khi mở. Console warn/error trống sau các flow và lần tính cuối. Ảnh sau sửa: `/Users/khoadanganh/Downloads/mi-cay-ui-flow-mobile.jpg`.
+
+### Regression cuối
+
+- `node --test check-secret.cjs check-auto-broth.cjs check-forecast.cjs`:28/28 PASS.
+- `node check.cjs`, `node check-ui.cjs`, `node check-worker.cjs`:PASS; Worker/direct khớp3 cấu hình và error path. `node --check app.js`, `git diff --check`:PASS.
+- Các sửa cuối chỉ CSS; browser callbacks được chạy RED trước sửa và GREEN sau sửa. Không thêm dependency hoặc đổi thuật toán. Chưa test keyboard vật lý/đa trình duyệt; không tuyên bố Pages đã deploy chỉ từ push.

@@ -50,7 +50,7 @@ git diff --check
 
 Kiểm tra gồm công thức thu hút, ngưỡng phạt giá, cấu hình, tái lập ngẫu nhiên, khách quá tải, công suất và sổ lợi nhuận. Không có dependency bên ngoài.
 
-Giao diện ưu tiên điện thoại: nhập quán, tìm/lọc món không dấu, tìm giá, xem sức bếp/mất khách rồi dùng giá. Desktop dùng cùng chức năng. HTTP(S) tính nền bằng Worker; mở file trực tiếp có fallback tính trên trang và có thể chậm. Tra cứu 21 bảng data chỉ dựng khi mở. Bản cập nhật này không chạy kiểm thử UI/browser theo yêu cầu; chỉ kiểm tra cú pháp giao diện và tập trung kiểm thử core. Ba màn Quán/Menu/Kết quả giữ thông số và bộ lọc khi chuyển màn; thanh dưới luôn có nút Tìm giá. Input 44px trên mobile, 38px trên desktop; bảng giá chính hiển thị ngay ở Kết quả, các chi tiết đóng mặc định.
+Giao diện ưu tiên điện thoại: nhập quán, tìm/lọc món không dấu, tìm giá, xem sức bếp/mất khách rồi dùng giá. Desktop dùng cùng chức năng. HTTP(S) tính nền bằng Worker; mở file trực tiếp có fallback tính trên trang và có thể chậm. Tra cứu 21 bảng data chỉ dựng khi mở. Lượt triển khai ban đầu bỏ UI tests theo yêu cầu; lượt kiểm tra tiếp theo đã test browser mobile/desktop và các flow chính, sửa lỗi layout/vùng chạm. Bằng chứng mới nhất ở tasks/verification.md. Ba màn Quán/Menu/Kết quả giữ thông số và bộ lọc khi chuyển màn; thanh dưới luôn có nút Tìm giá. Input 44px trên mobile, 38px trên desktop; bảng giá chính hiển thị ngay ở Kết quả, các chi tiết đóng mặc định.
 
 Nước lẩu gia truyền (source 2.3.9): mở từ ngày 3 sau hướng dẫn. App **luôn giả định làm thành công**, tự đề xuất một nồi đã mở và đang bán; không nhập trạng thái hoặc chọn nồi trước. Secret cũ trong localStorage/optimize bị bỏ qua, các thông số quán khác được giữ. Ngày 1–2 không áp hiệu ứng.
 
