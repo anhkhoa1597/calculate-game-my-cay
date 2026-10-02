@@ -191,3 +191,91 @@ Tách chỉ số app/khách tại quán và cho xem giá hiện tại bên cạn
 ## Đối chiếu ngày 2 và khoảng tô — 02/10/2026
 
 Người dùng yêu cầu rà lại core và thêm min–max. Giá chọn theo lợi nhuận trung bình sau chi phí. Hiển thị riêng số dự đoán theo công thức game trước mở cửa (không giới hạn sức bếp/nhịp app) và số tô thực giao trung bình; min/max phải là cực trị số tô của đúng tập 256 seed cuối, không phải CI lợi nhuận hoặc bảo đảm thực tế. Test RED trước GREEN theo skill TDD được người dùng gọi lần này. Repro ngày 2, 5 decor, kim chi 30k, 3 topping, giả định 5 sao/30 đánh giá: dự đoán game 37 và khoảng 28–29 tô trung bình có thể đồng thời đúng. Giữ phạm vi mobile gọn, không mở rộng lưu trữ.
+
+## Bổ sung dự thảo: Nước lẩu gia truyền và so sánh các nồi
+
+**Trạng thái: chưa duyệt; chỉ viết spec, chưa sửa code sản phẩm.** Cơ sở: audit `audits/secret-broth-2.3.9.md`. Các tiêu chí dưới đây chỉ thay giới hạn “không tính bí truyền” sau khi được duyệt và triển khai; không khẳng định bản đang chạy đã có tính năng.
+
+### Mục tiêu và giả định
+
+Một tính năng tính toán gia truyền: nhập hiệu ứng đang có và so sánh nồi nên làm tại menu/giá hiện tại. Tiếp tục tối ưu lợi nhuận trung bình một ngày, giữ app tĩnh/mobile/Worker, tự nhớ phụ và các chỉ số trung bình/min–max/dự đoán game.
+
+Giả định cần người dùng duyệt:
+
+- Tính lợi ích khi người chơi **nấu đúng**, không đoán xác suất nhớ minigame thành công.
+- So sánh gia truyền trên **cùng bảng giá**, đủ nguyên liệu và tốc độ đã nhập; chưa tìm tối ưu đồng thời mọi tổ hợp nồi + giá + menu.
+- Menu đang mở và phục vụ do người chơi chọn; không tự mua/mở/bỏ nước lèo.
+- Không tạo bộ giải thứ tự gia vị hoặc tự thao tác game trong đợt này.
+
+### Quy tắc tính toán
+
+1. Mặc định không gia truyền; ngày 1–2 không cho hiệu ứng hoặc đề xuất nấu. Phạm vi chơi quán thường, không thi Giải mì/PvP.
+2. Tối đa một nồi đang có hiệu ứng mỗi ngày. Đúng ngày, đã thành công, nồi có trong menu hợp lệ mới áp dụng; đổi ngày bỏ trạng thái hôm trước.
+3. Nhóm hoàn tất có >=1 tô đúng nồi: cộng đúng 1 sao sau phạt và bù giá rẻ, trước clamp [1,5]. Online cũng được sao; không cộng cho đơn hủy, từng tô trước khi nhóm hoàn tất hoặc toàn bộ nồi khác.
+4. Tip gia truyền = 2.000đ × số tô đúng nồi của **nhóm tại quán hoàn tất**. Không tip này cho online thường; không tính tip cho nhóm chỉ giao một phần rồi bỏ về. Không để hũ tip nhân phần thưởng gia truyền. Payday nhân tổng tip sau cùng nên phần này thành 4.000/tô. Thưởng tô sứ/mèo dùng rating đã có gia truyền; reviewer dùng rating cuối theo quy tắc nguồn.
+5. Giá, vốn, xác suất gọi món/topping, tốc độ nấu và ngưỡng từ chối giữ nguyên. Gia truyền chỉ tăng thu hút gián tiếp qua lịch sử sao mới; không nhân khách thêm một hằng số và không nâng sao đầu ngày trước khi giao món.
+6. Báo riêng số tô gia truyền đã giao, số nhóm thực được cộng sao và phần tip gia truyền. Không coi toàn bộ chênh lệch lợi nhuận là tip trực tiếp.
+7. Tô trung bình/min–max lấy đúng số tô thực giao từng seed; dự đoán trước mở cửa vẫn theo so()/wi(), không được cộng buff sao sớm.
+
+### Trạng thái và luồng mobile
+
+Thêm nhóm thu gọn “Nước lẩu gia truyền hôm nay”, gồm trạng thái và nồi, cạnh thông số/menu. Trạng thái: chưa thử; đã chọn nhưng chưa đúng (còn lượt); hết lượt; đã đúng. Nồi chọn trong nước lèo đang phục vụ. Khi đã bắt đầu thử, nhắc game khóa nồi cho hôm đó; công cụ vẫn cho sửa khai báo để khớp game nhưng không tự đề xuất chuyển nồi.
+
+Dữ liệu tối thiểu gắn ngày, không lưu kết quả/chuỗi gia vị:
+
+```js
+secret: { day: 3, broth: 'kimchi', status: 'active' }
+// status: 'none' | 'locked' | 'exhausted' | 'active'; broth null khi none.
+```
+
+`active` nghĩa là đã nấu đúng; `locked` nghĩa là đã thử nhưng chưa thành công, còn lượt; `exhausted` hết lượt. Bản lưu cũ mặc định none. Giảm cấp, bỏ nồi hoặc đổi ngày: hạ trạng thái về none, báo ngắn; core cũng chặn/không áp record sai ngày, nồi khóa/topping/mã lạ. Không auto-enable hiệu ứng chỉ vì người dùng đọc đề xuất.
+
+### Đề xuất nồi nên nấu — có điều kiện rõ ràng
+
+- Chưa thử và ngày >=3: sau lượt tìm giá, đánh giá “không gia truyền” và từng nồi trong menu **giả định nấu đúng**, trên cùng bảng giá đề xuất, cùng 256 seed. Tối đa 10 kịch bản (none + 9 nước lèo).
+- Đã chọn nhưng chưa đúng: chỉ so sánh không buff với thành công ở nồi đã khóa, không xếp hạng nồi khác. Hết lượt: không khuyên đổi nồi hôm đó. Đã đúng: tối ưu giá theo buff thực tế; so sánh none chỉ để giải thích lợi ích, không đề nghị đổi nồi.
+- Bảng: tên nồi, lợi nhuận trung bình, tăng/giảm so none, tô trung bình và min–max, sao cuối ngày, tip gia truyền. Nồi thứ hạng cao nhất là tốt nhất **ở bảng giá đang so**, không phải tối ưu toàn cục.
+- Có khoảng bất định của chênh lệch từ từng cặp ngày cùng seed; nếu lợi ích/khác biệt giữa hai phương án chưa rõ, ghi “chưa rõ nồi nào tốt hơn”, không buộc chốt một nồi vì chênh lệch nhỏ. Cùng seed giúp so sánh nhưng không đồng nghĩa dòng random trong các nhánh luôn giống nhau.
+- Không chạy lại full optimize riêng cho 9 nồi. Nếu người chơi làm thành công nồi được gợi ý, cập nhật active và Tìm giá lại để tìm giá phù hợp buff mới. Các kịch bản giả định không ghi đè cấu hình thực tế.
+- Nếu chỉ có một nồi: so none với nồi đó; không dựng bảng xếp hạng vô nghĩa. Khuyến nghị không hứa đảm bảo tăng lời hoặc tự mua thêm nước lèo.
+
+### Kiểm thử và nghiệm thu
+
+Dùng Node assert/node:test đang có; TDD RED trước GREEN cho logic mới. Không thêm dependency hay mục tiêu coverage mới. Tách test hiệu ứng tiền/sao xác định khỏi simulation ngẫu nhiên để bắt đúng thứ tự thưởng.
+
+- **G01:** Record cũ/default none giữ nguyên kết quả cũ theo seed; ngày 1–2, hết lượt hoặc khác ngày không được buff; nồi chưa mở/mã topping không hợp lệ bị chặn.
+- **G02:** Mỗi loại trong cả 9 nước lèo: test chạy độc lập khi đủ level, với/không buff; kiểm tra vốn từng món, fee, sao, tip, counts/min–max và profit identity. Test riêng kimchi, tomyum, tương đen, sữa phô mai, lẩu nấm, mala, tiêu xanh, gà lá é, riêu cua; không thay bằng một fixture all-menu.
+- **G03:** Nhóm 1/2/3 tô gồm 0/1/2/3 tô trùng nồi; +1 sao mỗi nhóm có match (không +1 mỗi tô), chỉ match được tip, giới hạn 5 sao. Nhóm bỏ về/đơn hủy không có thưởng hoàn tất.
+- **G04:** Online chỉ tăng sao, tip bí truyền 0; tại quán 2k/tô; hũ tip không nhân 2k, payday nhân đôi; kiểm tra 3→4 sao mở thưởng tô sứ/mèo và reviewer không cộng ba sao bí truyền.
+- **G05:** Ma trận menu nhiều loại: các mốc cấp, đủ 9 nồi, no topping/1/đầy topping, menu màu, giá lệch giữa nồi, thấp/cao sao, nhanh/chậm/quá tải, online/tại quán/hỗn hợp; không NaN, counts và tiền khớp, không có bonus ngoài match. Không đòi exhaustive mọi tổ hợp.
+- **G06:** Comparator dùng giá/seed/budget giống nhau, xếp theo lợi nhuận, báo chưa rõ khi nhiễu; đúng hạn chế nồi khóa/ngày <3; không thay đổi state sau giả lập. Min–max là 256 seed thực giao. Worker kết quả khớp engine kể cả secret config và comparator; progress/request id/lỗi vẫn đúng.
+- **G07:** Smoke mobile một lượt chọn nồi/trạng thái → tính → đọc lợi ích → reload → đổi ngày. Auto-save best effort, lỗi lưu không cản tính, không mở rộng ma trận UI.
+- **G08:** Đối chiếu catalog và các nhánh liên quan trong source 2.3.9 trước triển khai; giới hạn mô hình/README phải bỏ loại trừ gia truyền chỉ sau khi feature hoạt động và tests qua.
+
+### Cấu trúc, style và lệnh
+
+Giữ cấu trúc hiện tại: core ở `engine.js`; UI trong `app.js`/`index.html`; Worker `worker.js`; tests mới `check-secret.cjs`; mở rộng `check-worker.cjs`/`check-ui.cjs`; data/docs chỉ sửa khi có bằng chứng. Không tạo một engine lợi nhuận thứ hai. Dùng camelCase/native API; trạng thái ví dụ trên đi qua validate và snapshot Worker.
+
+```sh
+cd /Users/khoadanganh/Documents/Codex/mi-cay-planner
+python3 -m http.server 8765 --bind 127.0.0.1
+node --test check-secret.cjs
+node check.cjs
+node --test check-forecast.cjs
+node check-worker.cjs
+node check-ui.cjs
+node --check engine.js
+node --check app.js
+node --check worker.js
+git diff --check
+```
+
+`check-secret.cjs` là file dự kiến, chưa tồn tại ở bước spec. Không cần build.
+
+### Ranh giới và câu hỏi còn lại
+
+- Luôn: đối chiếu source, validate trạng thái/ngày/nồi, test tiền/sao bằng TDD, giữ UI mobile và số lượt final 256, nêu rõ kịch bản giả định cùng giá.
+- Trao đổi trước: tối ưu đồng thời giá+nồi cho mọi kịch bản, tính xác suất thất bại minigame hoặc đưa bộ giải gia vị vào phạm vi.
+- Không: auto nhận làm đúng, thay đổi game, auto mua/bỏ nồi, nhân khách trực tiếp do buff, cộng 2k tip online thường, coi mẫu min/max là bảo đảm.
+
+Cần duyệt phạm vi **tính buff đã làm đúng + đề xuất nồi tại cùng bảng giá**, thay vì bộ giải minigame/tối ưu tổ hợp toàn bộ. Sau khi duyệt spec mới chuyển sang plan/tasks; chưa thực hiện các kiểm thử gia truyền hoặc thay engine trong lượt này.
