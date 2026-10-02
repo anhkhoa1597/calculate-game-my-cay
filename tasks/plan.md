@@ -56,3 +56,51 @@ Không có câu hỏi sản phẩm đang chặn. Desktop, lưu trữ và test UI
 ## R5: source 2.3.8 theo yêu cầu cập nhật
 
 Phạm vi mới cho phép sửa engine/data: đối chiếu source → cập nhật chương/kênh bán/thu hút/fixed → UI và migrate → chạy core/Worker/storage rồi smoke mobile → ghi kết quả và push. Thực hiện tuần tự, triển khai hết trước khi test. Seed và ngân sách tìm giá giữ nguyên; không mô phỏng nhiệm vụ chuyển chương hoặc tô hướng dẫn, không hardcode 24 khách. Kết quả ở tasks/verification.md.
+
+
+## Gia truyền — kế hoạch bổ sung 02/10/2026
+
+Spec gia truyền được người dùng duyệt bằng “chốt”. Phần này bổ sung công việc mới, giữ nguyên lịch sử R1–R6 đã hoàn tất. **Kế hoạch và task gia truyền đang chờ duyệt; chưa triển khai.** Dùng `SPEC.md:195` và `audits/secret-broth-2.3.9.md` làm căn cứ.
+
+### Quyết định kỹ thuật
+
+- Giữ một engine duy nhất và kênh optimize/Worker hiện có; không thêm dependency hoặc bộ giải minigame.
+- `secret` là record trạng thái gắn ngày; dữ liệu cũ không có record được hiểu là none. Core chặn mã/nồi không hợp lệ; UI hạ trạng thái khi đổi ngày/menu/level để khớp game. Không thay cấu hình thật khi chạy giả định.
+- Hoàn tất nhóm mới cộng sao/tip. Tách một helper tính rating/tip nếu cần test xác định; helper phải được simulate dùng trực tiếp, không viết logic giả riêng trong tests. Không tiêu thụ random mới khi secret none để giữ kết quả cũ theo seed.
+- Mỗi lượt tính vẫn tối ưu giá với trạng thái thật. Chưa thử: sau tối ưu, so none với từng nồi giả định thành công ở cùng bảng giá, 256 seed như nhau; tối đa 10 kịch bản. Đã khóa chỉ so nồi đã khóa; active không khuyên đổi nồi; hết lượt/ngày <3 không khuyên làm gia truyền.
+- Tách chênh lệch lợi nhuận trung bình, tip trực tiếp, nhóm nhận sao và số tô đúng nồi. Khoảng bất định dùng chênh lệch từng cặp seed; min–max tô là mẫu quan sát, không phải bảo đảm. Không kết luận hơn nhau khi khoảng bất định chứa 0.
+- UI thu gọn ưu tiên mobile; bảng nhiều nồi dùng cách trình bày đọc được trên màn hình nhỏ. Lưu best effort; không import/export JSON, không mở rộng desktop hoặc ma trận UI.
+
+### Thứ tự và các điểm kiểm chứng
+
+```text
+S1 Đối chiếu source 2.3.9
+  → S2 Khai báo trạng thái hợp lệ
+  → S3 Tính sao/tip khi hoàn tất nhóm
+  → checkpoint core
+  → S4 So sánh nồi qua engine/Worker
+  → S5 Đọc đề xuất trên mobile
+  → checkpoint luồng tính
+  → S6 Hồi quy đầy đủ, tài liệu và hoàn tất
+```
+
+S2 có đường nhập/lưu trạng thái; S3 làm hiệu ứng có ý nghĩa trong mô phỏng; S4 trả dữ liệu so sánh; S5 hiển thị dữ liệu ấy. Làm tuần tự. TDD RED–GREEN cho logic mới theo spec đã duyệt; các bài kiểm tra toàn hệ thống và smoke UI chạy cuối. Checkpoint nội bộ ghi bằng chứng, không thêm gate xin duyệt từng task.
+
+Danh sách việc chi tiết duy nhất nằm ở mục S1–S6 trong `tasks/todo.md`. Mỗi task tối đa khoảng 5 file; chỉ thay catalog nếu source chứng minh dữ liệu đã đổi. Không đổi provenance toàn core chỉ dựa trên audit gia truyền.
+
+### Rủi ro và cách xử lý
+
+| Rủi ro | Xử lý |
+|---|---|
+| Bundle 2.3.9 thay đổi thêm ngoài gia truyền | S1 đối chiếu catalog, khách/kênh/giá/chờ/rating/tip; ghi rõ phần chưa mô phỏng, cập nhật spec nếu phát hiện mở rộng đáng kể |
+| Sai thứ tự tip hoặc thưởng nhóm giao dở | Test xác định tiền/sao trước; tip gia truyền sau hũ tip, trước mèo/payday; chỉ nhóm hoàn tất |
+| Buff sao thay đổi lượng khách và RNG | Test feedback trong ngày; không nâng sao đầu ngày, không thêm hệ số khách; giữ seed none cũ |
+| Khác biệt hai nồi nhỏ hơn nhiễu | So cặp cùng seed; báo chưa rõ; không quảng cáo tối ưu toàn cục |
+| So 9 nồi khiến mobile chậm | Một lượt 256 seed/kịch bản sau tìm giá; Worker báo progress; không chạy lại full optimize cho từng nồi |
+| Bản lưu hoặc kết quả cũ còn trạng thái sai ngày | Normalize trạng thái và đánh dấu kết quả cũ khi đổi input; save lỗi không chặn tính |
+
+### Kiểm chứng cuối
+
+Chạy các lệnh trong mục gia truyền của SPEC: `node --test check-secret.cjs`, core/forecast/Worker/UI, kiểm tra cú pháp và `git diff --check`. Smoke mobile một luồng nhập → tìm → đọc lợi ích → reload → đổi ngày. Ghi kết quả thật vào `tasks/verification.md`; cập nhật README theo phạm vi đã qua test. Commit/push theo quyền đã có; không tuyên bố Pages đã deploy khi chưa kiểm tra.
+
+Không có câu hỏi sản phẩm mới; phần còn chờ là duyệt kế hoạch và task để chuyển sang triển khai.

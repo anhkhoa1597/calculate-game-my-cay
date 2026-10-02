@@ -88,3 +88,82 @@ Triển khai tuần tự toàn bộ trước khi chạy kiểm tra theo yêu c�
 - [x] Checks đầy đủ core/Worker/UI, đối chiếu source 600 cấu hình và smoke mobile mới qua.
 - [x] Ghi kết quả và giới hạn mô hình.
 - [x] Commit/push bản cập nhật theo quyền đã có.
+
+
+## Gia truyền — S1–S6 (chờ duyệt kế hoạch/task)
+
+Spec đã duyệt ngày 02/10/2026. Các ô dưới đây là công việc **chưa làm**, không phải kết quả test. Thực hiện tuần tự, TDD cho logic; kiểm tra toàn hệ thống cuối.
+
+### S1: Đối chiếu source 2.3.9
+
+- [ ] Đối chiếu cả 9 nước lèo và catalog liên quan, các nhánh khách/kênh/giá/chờ/rating/tip với mô hình hiện tại; ghi sai khác và giới hạn.
+- [ ] Xác nhận day >=3, khóa nồi, record đúng ngày, +1 sao/nhóm, online không tip và thứ tự thưởng; không hiểu nhầm khóa nút 300ms thành tiền/XP.
+- [ ] Chỉ đổi data có bằng chứng; nếu phát sinh phạm vi mới đáng kể cập nhật spec trước.
+
+**Verify:** đọc source gốc và đối chiếu audit với engine/data; `git diff --check`; chạy `node check.cjs` nếu sửa data.
+**Dependencies:** spec đã duyệt.
+**Files:** `audits/secret-broth-2.3.9.md`, `game-data.js` nếu cần, `SPEC.md` nếu cần.
+**Scope:** nhỏ, tối đa 3 file.
+
+### S2: Người chơi khai báo gia truyền hôm nay
+
+- [ ] Thêm/validate record secret; cấu hình cũ mặc định none; chặn nồi/mã/ngày không hợp lệ, ngày 1–2 không có buff.
+- [ ] Nhóm input mobile thu gọn khai báo 4 trạng thái và nồi; đổi ngày/level/menu hạ record không hợp lệ và đánh dấu kết quả cũ.
+- [ ] Save/snapshot giữ đúng trạng thái thực; lỗi storage không chặn tính, không tự chuyển active khi xem gợi ý.
+
+**Verify:** RED→GREEN cases trạng thái trong `node --test check-secret.cjs`; `node --check engine.js`; `node --check app.js`; UI smoke để cuối S6.
+**Dependencies:** S1.
+**Files:** `engine.js`, `app.js`, `index.html`, `check-secret.cjs`, `check-ui.cjs`.
+**Scope:** vừa, 5 file.
+
+### S3: Mô phỏng sao và tip gia truyền
+
+- [ ] Nhóm hoàn tất có match nhận đúng +1 sao, clamp 5; online nhận sao; bỏ về/giao dở không nhận thưởng hoàn tất.
+- [ ] Tip chỉ tại quán 2k/tô match; hũ tip không nhân phần này, payday nhân đôi, rating mới ảnh hưởng tô sứ/mèo; reviewer dùng rating cuối.
+- [ ] Ghi tô match đã giao/nhóm thực cộng sao/tip trực tiếp; không đổi vốn/giá/topping/tốc độ; sao mới ảnh hưởng traffic trong ngày, không sửa forecast đầu ngày.
+
+**Verify:** RED→GREEN G02–G04 cho cả 9 nồi, nhóm 1/2/3 và tiền xác định; `node --test check-secret.cjs`; `node check.cjs`; `node --test check-forecast.cjs`.
+**Dependencies:** S2.
+**Files:** `engine.js`, `check-secret.cjs`, `check.cjs` nếu cần.
+**Scope:** vừa, tối đa 3 file.
+
+### Checkpoint core sau S2–S3
+
+- [ ] Trạng thái cũ/none giữ kết quả seed cũ; tiền/sao/match khớp nguồn; ledger không sai; ghi bằng chứng RED/GREEN.
+
+### S4: So sánh nồi gia truyền qua Worker
+
+- [ ] So none và các nồi hợp lệ giả định active bằng cùng giá/256 seed; trả profit delta, khoảng bất định, mean/min/max tô, sao và tip; ranking theo lợi nhuận và báo chưa rõ khi nhiễu.
+- [ ] Áp hạn chế chưa thử/khóa/hết lượt/active/ngày <3; không mutate config thật, không chạy full optimize riêng từng nồi; optimize active tính buff thật.
+- [ ] Worker/direct cho kết quả giống nhau, progress/request id/validation vẫn đúng.
+
+**Verify:** RED→GREEN comparator tests trong `node --test check-secret.cjs`; `node check-worker.cjs`; kiểm tra cấu hình sau mô phỏng không bị đổi và số seed/kịch bản đúng.
+**Dependencies:** S3.
+**Files:** `engine.js`, `worker.js` nếu cần, `check-secret.cjs`, `check-worker.cjs`.
+**Scope:** vừa, tối đa 4 file.
+
+### S5: Người chơi đọc được nồi nên chọn trên mobile
+
+- [ ] Hiện lợi ích gia truyền và so sánh cùng giá, phân biệt buff thật/giả định; không kết luận nồi đắt nhất luôn tốt hơn hoặc hứa tối ưu toàn cục.
+- [ ] Một nồi chỉ hiện so none; đã khóa/active/hết lượt không khuyên đổi; nhắc tìm giá lại sau khi khai báo làm đúng.
+- [ ] Giữ mean/min–max/forecast khác nhau, thao tác mobile rõ và save best effort; không mở rộng desktop hoặc JSON.
+
+**Verify:** `node check-ui.cjs`; `node --check app.js`; `git diff --check`; smoke trình duyệt thực ở S6.
+**Dependencies:** S4.
+**Files:** `app.js`, `index.html`, `style.css`, `check-ui.cjs`.
+**Scope:** vừa, 4 file.
+
+### Checkpoint luồng tính sau S4–S5
+
+- [ ] Worker trả dữ liệu comparator đầy đủ; UI không ghi kịch bản giả định thành trạng thái thật; input thay đổi làm kết quả cũ được đánh dấu.
+
+### S6: Hồi quy core và hoàn tất
+
+- [ ] Bổ sung/chạy ma trận G01–G08: từng nồi và menu trộn, sao/topping/menu màu/giá/sức bếp/kênh; kiểm tra counts, tiền, min–max, ledger và trạng thái.
+- [ ] Chạy toàn bộ checks/cú pháp/diff; smoke mobile một lần nhập→tính→đọc→reload→đổi ngày; sửa lỗi nếu phát hiện, không mở rộng ma trận UI.
+- [ ] Ghi kết quả thật/giới hạn; chỉ bỏ loại trừ gia truyền và đổi provenance core khi có bằng chứng; commit/push theo quyền đã có.
+
+**Verify:** toàn bộ lệnh ở phần gia truyền SPEC; Node tests và smoke thực; `git diff --check`; kiểm tra working tree/commit/push.
+**Dependencies:** S5.
+**Files:** `check-secret.cjs`, `check-worker.cjs`, `README.md`, `tasks/verification.md`, `tasks/todo.md`. Nếu cần sửa sản phẩm, quay về task liên quan và chạy lại checks bị ảnh hưởng.
+**Scope:** vừa, 5 file.

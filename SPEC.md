@@ -194,13 +194,13 @@ Người dùng yêu cầu rà lại core và thêm min–max. Giá chọn theo l
 
 ## Bổ sung dự thảo: Nước lẩu gia truyền và so sánh các nồi
 
-**Trạng thái: chưa duyệt; chỉ viết spec, chưa sửa code sản phẩm.** Cơ sở: audit `audits/secret-broth-2.3.9.md`. Các tiêu chí dưới đây chỉ thay giới hạn “không tính bí truyền” sau khi được duyệt và triển khai; không khẳng định bản đang chạy đã có tính năng.
+**Trạng thái: người dùng đã duyệt ngày 02/10/2026 (“chốt”); chưa triển khai code sản phẩm.** Cơ sở: audit `audits/secret-broth-2.3.9.md`. Các tiêu chí dưới đây chỉ thay giới hạn “không tính bí truyền” sau khi triển khai và kiểm chứng; không khẳng định bản đang chạy đã có tính năng.
 
 ### Mục tiêu và giả định
 
 Một tính năng tính toán gia truyền: nhập hiệu ứng đang có và so sánh nồi nên làm tại menu/giá hiện tại. Tiếp tục tối ưu lợi nhuận trung bình một ngày, giữ app tĩnh/mobile/Worker, tự nhớ phụ và các chỉ số trung bình/min–max/dự đoán game.
 
-Giả định cần người dùng duyệt:
+Giả định đã chốt trong phạm vi gia truyền:
 
 - Tính lợi ích khi người chơi **nấu đúng**, không đoán xác suất nhớ minigame thành công.
 - So sánh gia truyền trên **cùng bảng giá**, đủ nguyên liệu và tốc độ đã nhập; chưa tìm tối ưu đồng thời mọi tổ hợp nồi + giá + menu.
@@ -278,4 +278,4 @@ git diff --check
 - Trao đổi trước: tối ưu đồng thời giá+nồi cho mọi kịch bản, tính xác suất thất bại minigame hoặc đưa bộ giải gia vị vào phạm vi.
 - Không: auto nhận làm đúng, thay đổi game, auto mua/bỏ nồi, nhân khách trực tiếp do buff, cộng 2k tip online thường, coi mẫu min/max là bảo đảm.
 
-Cần duyệt phạm vi **tính buff đã làm đúng + đề xuất nồi tại cùng bảng giá**, thay vì bộ giải minigame/tối ưu tổ hợp toàn bộ. Sau khi duyệt spec mới chuyển sang plan/tasks; chưa thực hiện các kiểm thử gia truyền hoặc thay engine trong lượt này.
+Đã duyệt phạm vi **tính buff đã làm đúng + đề xuất nồi tại cùng bảng giá**, không bao gồm bộ giải minigame/tối ưu tổ hợp toàn bộ. Bước tiếp theo: duyệt phần kế hoạch gia truyền trong `tasks/plan.md` và các task tương ứng trong `tasks/todo.md`. Chưa thực hiện kiểm thử gia truyền hoặc thay engine ở bước spec/plan.
