@@ -169,57 +169,57 @@ Spec đã duyệt ngày 02/10/2026. Đã triển khai tuần tự và kiểm th�
 **Scope:** vừa, 5 file.
 
 
-## Auto gia truyền và UI gọn — A1–A5 (chờ duyệt plan/task)
+## Auto gia truyền và UI gọn — A1–A5 (đã duyệt)
 
-Phạm vi đã chốt; chưa làm các task dưới đây. Làm tuần tự, không thay lịch sử đã hoàn tất. Checks cuối tập trung core; UI smoke vừa đủ.
+Phạm vi/plan đã duyệt. Làm tuần tự, không thay lịch sử đã hoàn tất. Chỉ đạo cuối: triển khai hết rồi kiểm tra core nước lẩu; bỏ UI tests/browser smoke.
 
 ### A1: Core tự chọn nồi giả định thành công
 **Mô tả:** Từ ngày3, chọn một nồi đang bán theo profit mean, bỏ qua secret cũ trong optimize.
-- [ ] So cùng giá/256 seed, chọn trong broths, tie ổn định và nhãn uncertainty; ngày1–2 không buff.
-- [ ] Search tối đa hai lượt như spec; giá/stats/baseline/alternatives có đúng nồi cuối và nhãn giới hạn rõ.
-- [ ] Giữ simulate explicit, công thức buff và input bất biến; không optimize riêng từng nồi.
+- [x] So cùng giá/256 seed, chọn trong broths, tie ổn định và nhãn uncertainty; ngày1–2 không buff.
+- [x] Search tối đa hai lượt như spec; giá/stats/baseline/alternatives có đúng nồi cuối và nhãn giới hạn rõ.
+- [x] Giữ simulate explicit, công thức buff và input bất biến; không optimize riêng từng nồi.
 **Verify:** node --test check-secret.cjs; node check.cjs; node --test check-forecast.cjs; batch độc lập kiểm tra nồi cuối.
 **Dependencies:** scope/spec đã chốt.
-**Files:** engine.js, check-secret.cjs, check-forecast.cjs nếu cần. **Scope:** vừa, tối đa3 file.
+**Files:** engine.js, check-secret.cjs, check-auto-broth.cjs. **Scope:** vừa,3 file.
 
 ### A2: Người dùng nhận đề xuất auto
 **Mô tả:** Nối result.secret auto vào đường tính thật, bỏ UI khai báo trạng thái và giữ dữ liệu quán cũ.
-- [ ] Worker/direct khớp auto; progress/id/lỗi đúng, đủ1/9nồi và ngày1–2/3.
-- [ ] Giao diện bỏ status/broth manual, hiển thị nồi giả định thành công và stats đúng; không ghi thành công thật vào state.
-- [ ] Restore/persist bỏ ảnh hưởng secret cũ, giữ phần còn lại của quán; lưu lỗi không chặn tính.
-**Verify:** node check-worker.cjs; node check-ui.cjs; node --check app.js; smoke tại A5.
+- [x] Worker/direct khớp auto; progress/id/lỗi đúng, đủ1/9nồi và ngày1–2/3.
+- [x] Giao diện bỏ status/broth manual, hiển thị nồi giả định thành công và stats đúng; không ghi thành công thật vào state.
+- [x] Restore/persist bỏ ảnh hưởng secret cũ, giữ phần còn lại của quán; lưu lỗi không chặn tính.
+**Verify:** node check-worker.cjs; node --check app.js.
 **Dependencies:** A1.
 **Files:** app.js, index.html, worker.js nếu cần, check-worker.cjs, check-ui.cjs. **Scope:** vừa,5 file.
 
 ### Checkpoint core sau A1–A2
-- [ ] Nồi hợp lệ, giá/tô/lời cùng nồi cuối, Worker khớp, old save không khóa auto; ghi kết quả kiểm tra cuối.
+- [x] Nồi hợp lệ, giá/tô/lời cùng nồi cuối, Worker khớp, old save không khóa auto; ghi kết quả kiểm tra cuối.
 
 ### A3: Chuyển nhanh Quán/Menu/Kết quả
 **Mô tả:** Ba vùng thật thay ba anchor cuộn trang dài, dùng một state chung.
-- [ ] Một vùng hiện, selected/deep link/Back đúng; đổi vùng giữ input/filter/từ khóa và vị trí.
-- [ ] Tìm giá dễ tới ở mọi vùng, xong chuyển Kết quả; input sai mở đúng vùng và focus trường/summary.
-- [ ] Thanh/bàn phím không che nội dung; reset/dùng giá/stale vẫn đúng.
-**Verify:** node check-ui.cjs; node --check app.js; smoke390/320 và keyboard/Back ở A5.
+- [x] Một vùng hiện, selected/deep link/Back đúng; đổi vùng giữ input/filter/từ khóa và vị trí.
+- [x] Tìm giá dễ tới ở mọi vùng, xong chuyển Kết quả; input sai mở đúng vùng và focus trường/summary.
+- [x] Có safe area, inset động theo chiều cao thanh và scroll-padding; giữ reset/dùng giá/stale. Hành vi bàn phím chưa test thực.
+**Verify:** node --check app.js.
 **Dependencies:** A2.
 **Files:** app.js, index.html, style.css, check-ui.cjs. **Scope:** vừa,4 file.
 
 ### A4: Menu và kết quả gọn trên mobile
 **Mô tả:** Giảm mật độ khoảng trắng và phần mở sẵn để tìm món/xem giá nhanh.
-- [ ] Hero/header ngắn, input mobile44px/desktop36–40px, gap8px/padding12px; giữ labels/input font16px/focus.
-- [ ] Menu hàng gọn, search/filter dễ tới, tên/giá hiện tại/đề xuất rõ và không mất selection do filter.
-- [ ] Nồi/lời/giá/tô mean-min-max nổi bật; forecast riêng, thu chi/ranking/công thức/data đóng mặc định nhưng mở xem được.
-**Verify:** node --check app.js; node check-ui.cjs; git diff --check; screenshot/flow smoke tại A5.
+- [x] Hero/header ngắn, input mobile44px/desktop36–40px, gap8px/padding12px; giữ labels/input font16px/focus.
+- [x] Menu hàng gọn, search/filter dễ tới, tên/giá hiện tại/đề xuất rõ và không mất selection do filter.
+- [x] Nồi/lời/giá/tô mean-min-max nổi bật; forecast riêng, thu chi/ranking/công thức/data đóng mặc định nhưng mở xem được.
+**Verify:** node --check app.js; git diff --check.
 **Dependencies:** A3.
 **Files:** index.html, style.css, app.js, check-ui.cjs nếu cần. **Scope:** vừa,4 file.
 
-### Checkpoint luồng dùng sau A3–A4
-- [ ] Điều hướng/tìm món/tính/read/apply không cần cuộn tìm vùng khác; state và kết quả đúng, không che nội dung.
+### Checkpoint triển khai sau A3–A4 (rà code, không test UI)
+- [x] Đã triển khai điều hướng/tìm món/tính/read/apply cùng state, chừa khoảng cho thanh. Không chạy kiểm thử UI theo yêu cầu.
 
 ### A5: Kiểm chứng và hoàn tất
-**Mô tả:** Kiểm tra kỹ core, smoke đúng luồng bị đổi; ghi bằng chứng và hoàn tất bản sửa.
-- [ ] Core regression tiền/sao/công suất/forecast, 9nồi/mixed/overload/old states/uncertainty và Worker khớp; đo cấu hình full menu để xác nhận budget giới hạn.
-- [ ] Browser390px/liếc320px: đổi vùng/Back, input/search/filter/tính/read/apply/reload, lỗi/focus/keyboard; console sạch và ảnh kiểm chứng.
-- [ ] Docs đúng hành vi/giới hạn, commit/push theo quyền đã có; không báo Pages deploy khi chưa kiểm tra.
-**Verify:** toàn bộ lệnh hai spec và smoke browser thực; git diff --check; git status/push.
+**Mô tả:** Kiểm tra kỹ core nước lẩu, rà cú pháp/diff; ghi bằng chứng và hoàn tất bản sửa.
+- [x] Core regression tiền/sao/công suất/forecast, 9nồi/mixed/overload/old states/uncertainty và Worker khớp; đo cấu hình full menu để xác nhận budget giới hạn.
+- [x] Bỏ kiểm thử UI/browser theo yêu cầu cuối; không có ảnh hoặc kết luận UI đã được test.
+- [x] Docs đúng hành vi/giới hạn, commit/push theo quyền đã có; không báo Pages deploy khi chưa kiểm tra.
+**Verify:** checks core/Worker và cú pháp/diff; git diff --check; git status/push.
 **Dependencies:** A4.
 **Files:** check-secret.cjs, check-worker.cjs, README.md, tasks/verification.md, tasks/todo.md. **Scope:** vừa,5 file; lỗi sản phẩm sửa trong task liên quan.

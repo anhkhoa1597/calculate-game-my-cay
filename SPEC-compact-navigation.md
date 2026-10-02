@@ -1,6 +1,6 @@
 # Spec: compact-navigation
 
-Phạm vi đã chốt trong CAPABILITY-MAP.md, phụ thuộc secret-recommendation. Dùng UI/UX Pro Max theo audit trong capability map, giữ màu/type hiện có. Chưa triển khai.
+Phạm vi đã chốt trong CAPABILITY-MAP.md, phụ thuộc secret-recommendation. Dùng UI/UX Pro Max theo audit trong capability map, giữ màu/type hiện có. Đã duyệt triển khai.
 
 ## Mục tiêu
 Dùng điện thoại không phải cuộn tìm chức năng trên một trang dài. Ba vùng Quán/Menu/Kết quả chỉ hiện một vùng tại một thời điểm, đổi vùng một thao tác và không mất cấu hình/từ khóa/filter/scroll. Desktop dùng cùng chức năng, không thiết kế riêng phức tạp.
@@ -15,8 +15,11 @@ Dùng điện thoại không phải cuộn tìm chức năng trên một trang d
 - localStorage chỉ nhớ cấu hình hợp lệ, không bắt người dùng quản lý storage; vùng đang xem có thể giữ trong phiên. Giữ reset/hủy reset, validation và trạng thái tính rõ.
 
 ## Kiểm thử và nghiệm thu
-- Node check-ui kiểm tra state/migration/validation nếu đổi; browser smoke các luồng đổi vùng, tìm/filter/giá, tính→kết quả, dùng giá, lỗi chuyển đúng vùng và reload.
-- Kiểm tra 390px và liếc320px: không tràn ngang trang, tìm món dễ tới, không che bởi thanh cố định; keyboard/focus/Back/nhãn/selected rõ. Không mở rộng matrix UI hoặc Lighthouse.
+
+Cập nhật theo chỉ đạo cuối: triển khai tuần tự rồi test core nước lẩu; không chạy kiểm thử UI/browser. Các điều kiện UI dưới đây là yêu cầu triển khai, không phải bằng chứng đã test.
+
+- Không chạy Node check-ui hoặc browser smoke theo yêu cầu cuối; kiểm tra cú pháp và rà soát thay đổi.
+- Bố cục mục tiêu 390px/320px (không chạy smoke): không tràn ngang trang, tìm món dễ tới, không che bởi thanh cố định; keyboard/focus/Back/nhãn/selected rõ. Không mở rộng matrix UI hoặc Lighthouse.
 - Core/Worker không đổi công thức vì layout; result.secret auto hiển thị đúng, không còn điều khiển trạng thái gia truyền thủ công. Không thêm framework hoặc UI dependency.
 
 ## Stack, cấu trúc và style
@@ -36,7 +39,6 @@ node --test check-secret.cjs
 node --test check-forecast.cjs
 node check.cjs
 node check-worker.cjs
-node check-ui.cjs
 node --check engine.js
 node --check app.js
 node --check worker.js

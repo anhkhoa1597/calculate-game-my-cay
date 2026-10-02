@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const M=require('./engine.js'),UI=require('./app.js');
+const M=require('./engine.js');
 const secret=(s,broth,status='active')=>({...s,secret:{day:s.day,broth,status}});
 const bowl=broth=>({broth,tops:[],spice:0});
 const group=(bowls,online=false,vip=false)=>({bowls,index:bowls.length,online,vip});
@@ -22,11 +22,7 @@ test('gia truyền: ngày, trạng thái, menu, level và migration',()=>{
  for(const status of ['none','locked','exhausted'])assert.equal(M.secretBroth({...s,secret:{day:3,broth:status==='none'?null:'kimchi',status}}),null);
  for(const x of [null,{},[],{day:NaN,status:'active',broth:'kimchi'},{day:3,status:'wrong',broth:'kimchi'},{day:3,status:'none',broth:'kimchi'},{day:3,status:'active',broth:'bo'},{day:3,status:'active',broth:'rieu'}])assert.throws(()=>M.validate({...s,secret:x}));
  assert.equal(M.secretBroth({...s,secret:{day:3,status:'active',broth:'rieu'}}),null);
- assert.deepEqual(UI.normalizeSecret({...secret(s,'kimchi'),day:4}),{day:4,broth:null,status:'none'});
- assert.deepEqual(UI.normalizeSecret({...secret(s,'kimchi'),broths:[]}),{day:3,broth:null,status:'none'});
- assert.deepEqual(UI.normalizeSecret(secret(s,'kimchi')),secret(s,'kimchi').secret);
  const legacy={...s};delete legacy.secret;M.validate(legacy);
- assert.deepEqual(UI.restore({getItem:()=>JSON.stringify(legacy)}).state.secret,{day:3,broth:null,status:'none'});
 });
 
 test('nhóm 1–3 tô: chỉ đúng nồi được tip, cộng 1 sao mỗi nhóm; kiểm tra cả 9 nồi',()=>{

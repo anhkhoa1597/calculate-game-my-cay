@@ -108,7 +108,7 @@ Không có câu hỏi sản phẩm đang chặn; kế hoạch và task đã đư
 
 ## Kế hoạch: gia truyền tự đề xuất và UI gọn — 02/10/2026
 
-Phạm vi người dùng đã chốt, yêu cầu chuyển sang plan. Căn cứ: CAPABILITY-MAP.md, SPEC-secret-recommendation.md, SPEC-compact-navigation.md. **Plan/task mới chờ duyệt; chưa sửa code.** Giữ nguyên R1–R6/S1–S6 đã hoàn tất.
+Phạm vi người dùng đã chốt, yêu cầu chuyển sang plan. Căn cứ: CAPABILITY-MAP.md, SPEC-secret-recommendation.md, SPEC-compact-navigation.md. **Plan/task đã được duyệt; đã triển khai. Chỉ đạo cuối: hoàn tất triển khai rồi test core nước lẩu, bỏ kiểm thử UI/browser.** Giữ nguyên R1–R6/S1–S6 đã hoàn tất.
 
 ### Quyết định và thứ tự
 
@@ -128,9 +128,9 @@ A1 core auto → A2 người dùng nhận kết quả auto qua Worker/UI → che
 | Hai search chậm trên mobile | Giới hạn hai lượt, không lặp; Worker/progress; đo thời gian cấu hình full menu khi kiểm tra |
 | Giá trị secret cũ ép lựa chọn | Bỏ qua ở optimize, normalize luồng app và kiểm tra old saves; không reset toàn quán |
 | Ẩn vùng làm mất state/focus hoặc lỗi khó tìm | State chung, fragment/history, định tuyến lỗi và ghi vị trí; không dựng lại form khi đổi vùng |
-| Thu nhỏ làm khó đọc/chạm | Ưu tiên giảm hero/padding/thẻ; mobile44px/font input16px, focus rõ; smoke390/320 |
-| Nội dung bị thanh dưới/bàn phím che | Safe area, chừa inset và xử lý keyboard; kiểm tra tại input/menu/kết quả |
+| Thu nhỏ làm khó đọc/chạm | Ưu tiên giảm hero/padding/thẻ; mobile44px/font input16px, focus rõ; không smoke theo yêu cầu cuối |
+| Nội dung bị thanh dưới/bàn phím che | Safe area, inset động và scroll-padding; bàn phím chưa test thực theo yêu cầu cuối |
 
 ### Hoàn tất
 
-Checks ở hai spec, browser smoke gọn và kiểm tra core kỹ. Ghi kết quả thật trong tasks/verification.md, cập nhật README/giới hạn. Commit/push theo quyền đã có; xác nhận Pages riêng. Không có câu hỏi sản phẩm mới ngoài duyệt plan/task.
+Checks core/Worker ở hai spec và kiểm tra cú pháp/diff; không chạy kiểm thử UI/browser theo chỉ đạo cuối. Ghi kết quả thật trong tasks/verification.md, cập nhật README/giới hạn. Commit/push theo quyền đã có; xác nhận Pages riêng. Không có câu hỏi sản phẩm mới ngoài duyệt plan/task.

@@ -25,13 +25,13 @@ Các quy tắc đang mô phỏng đã đối chiếu source game 2.3.9 `https://
 
 Chương 1 chỉ online, 3 đơn chờ, nhịp app ×0,55, không tiền thuê; chương 2 có 2 chỗ, không thuê, bonus mưa/nóng ×1,15; chương 3–5 có 3 chỗ và thuê 40.000đ/ngày. Thêm bàn thành 4 chỗ từ chương 2; app các chương sau cần mua và có 2 đơn chờ. Phí app 20%, không tip app thường. Cấp chỉ giới hạn chương; hoàn thành nhiệm vụ mới chuyển chương. Cấu hình cũ thiếu chương tạm suy theo cấp và hiện nhắc kiểm tra lại.
 
-`engine.js` mô phỏng theo bước 0,1 giây: giờ cao điểm, giá và từ chối, trọng số 6 tô gần nhất, nhóm khách, bàn, app, kiên nhẫn, nồi luộc chạy song song, thao tác, nhân viên, sao mới, tip và chi phí. Mỗi món giá theo bước 1.000đ. Bộ tìm giá quét tỷ lệ và điều chỉnh từng món, kiểm chứng 8 phương án, rồi đánh giá phương án tốt nhất bằng 256 seed mới cùng mốc giá hiện tại.
+`engine.js` mô phỏng theo bước 0,1 giây: giờ cao điểm, giá và từ chối, trọng số 6 tô gần nhất, nhóm khách, bàn, app, kiên nhẫn, nồi luộc chạy song song, thao tác, nhân viên, sao mới, tip và chi phí. Mỗi món giá theo bước 1.000đ. Bộ tìm giá quét tỷ lệ và điều chỉnh từng món, kiểm chứng 8 phương án, rồi kiểm chứng bằng 256 seed mới. Từ ngày 3, tìm giá thường → so nồi gia truyền → tìm giá thêm một lần có hiệu ứng → so mọi nồi tại bảng giá cuối cố định. Số liệu chính, mốc giá hiện tại và phương án phụ đều dùng nồi cuối. Tối đa hai lượt tìm giá, không tối ưu riêng từng nồi.
 
-Giá tốt nhất được chọn theo **lợi nhuận trung bình** của các ngày kiểm chứng, không phải số tô trung bình hay lợi nhuận của một ngày thuận lợi. Khoảng tô tối thiểu–tối đa lấy min/max của số tô thực giao trong 256 seed cuối, tách biệt với khoảng tin cậy lợi nhuận; kết quả ngoài game có thể nằm ngoài khoảng này.
+Bảng giá đề xuất được tìm theo **lợi nhuận trung bình** của các ngày kiểm chứng, không phải số tô trung bình hay lợi nhuận của một ngày thuận lợi. Khoảng tô tối thiểu–tối đa lấy min/max của số tô thực giao trong 256 seed cuối, tách biệt với khoảng tin cậy lợi nhuận; kết quả ngoài game có thể nằm ngoài khoảng này.
 
 Dự đoán trước mở cửa trong source (`so`) là `round(210 × wi() / 10 × 0,95)`. Chỉ số này dùng công thức khách chung, không điều chỉnh theo chương online, sức bếp, chỗ chờ và đơn mất. Công cụ hiển thị riêng dự đoán đó với số tô giao trung bình. Với sự kiện auto chưa biết, lấy trung bình dự đoán của các sự kiện được rút trong batch; chọn sự kiện thực tế để đối chiếu. LED trước mở cửa tính 0,25×0,45; sàn bẩn chỉ áp trong ca bán; chưa có đánh giá luôn dùng 4 sao.
 
-“Tốt nhất” trong tập đã thử, mục tiêu lợi nhuận một ngày, không phải tối ưu toàn cục hay cam kết kết quả trong game. Khoảng tin cậy chỉ phản ánh ngẫu nhiên mô phỏng. Tốc độ thực tế, thứ tự thao tác và các cơ chế không mô phỏng tạo sai số riêng.
+Tìm kiếm có giới hạn, mục tiêu lợi nhuận một ngày, không phải chứng minh tối ưu toàn cục hay cam kết kết quả trong game. Sau khi đổi nồi cuối hoặc tập seed, bảng giá chính có thể không đứng đầu các phương án phụ. Khoảng tin cậy chỉ phản ánh ngẫu nhiên mô phỏng. Tốc độ thực tế, thứ tự thao tác và các cơ chế không mô phỏng tạo sai số riêng.
 
 Bếp dùng pipeline lý tưởng: có nguyên liệu đủ, thao tác đúng, mì được lấy ở vùng chín, duy trì nồi đều và phục vụ đơn sắp hết hạn. Bảng tiêu thụ là trung bình phần đã bán, không phải lượng tồn kho đủ cho mọi trường hợp. Hao hụt thêm có ô nhập riêng. Không mô phỏng tô hướng dẫn đầu game (đồng hồ game tạm dừng), thiếu hàng, drama ngẫu nhiên, đổi yêu cầu, mặc cả, giao xa, khách du lịch, nhiệm vụ/thưởng, phản hồi đánh giá hoặc lên cấp giữa ngày. Sale nguyên liệu không điều chỉnh giá vốn mua hàng trong mô hình chi phí tiêu thụ này. Không tính phí đầu tư trang bị/mở món.
 
@@ -40,9 +40,8 @@ Kiểm tra tính toán:
 ```sh
 node check.cjs
 node --test check-forecast.cjs
-node --test check-secret.cjs
+node --test check-secret.cjs check-auto-broth.cjs
 node check-worker.cjs
-node check-ui.cjs
 node --check app.js
 node --check engine.js
 node --check worker.js
@@ -51,10 +50,12 @@ git diff --check
 
 Kiểm tra gồm công thức thu hút, ngưỡng phạt giá, cấu hình, tái lập ngẫu nhiên, khách quá tải, công suất và sổ lợi nhuận. Không có dependency bên ngoài.
 
-Giao diện ưu tiên điện thoại: nhập quán, tìm/lọc món không dấu, tìm giá, xem sức bếp/mất khách rồi dùng giá. Desktop dùng cùng chức năng. HTTP(S) tính nền bằng Worker; mở file trực tiếp có fallback tính trên trang và có thể chậm. Tra cứu 21 bảng data chỉ dựng khi mở. Kiểm tra UI giới hạn ở smoke mobile khoảng 390px, liếc 320px và mở desktop; không bắt buộc Lighthouse hoặc ma trận thiết bị.
+Giao diện ưu tiên điện thoại: nhập quán, tìm/lọc món không dấu, tìm giá, xem sức bếp/mất khách rồi dùng giá. Desktop dùng cùng chức năng. HTTP(S) tính nền bằng Worker; mở file trực tiếp có fallback tính trên trang và có thể chậm. Tra cứu 21 bảng data chỉ dựng khi mở. Bản cập nhật này không chạy kiểm thử UI/browser theo yêu cầu; chỉ kiểm tra cú pháp giao diện và tập trung kiểm thử core. Ba màn Quán/Menu/Kết quả giữ thông số và bộ lọc khi chuyển màn; thanh dưới luôn có nút Tìm giá. Input 44px trên mobile, 38px trên desktop; bảng giá chính hiển thị ngay ở Kết quả, các chi tiết đóng mặc định.
 
-Nước lẩu gia truyền (source 2.3.9): mở từ ngày 3 sau hướng dẫn. Chọn trạng thái đúng với game: chưa thử, đã chọn còn lượt, hết lượt, hoặc đã làm đúng; một nồi hiệu lực một ngày. Nhóm hoàn tất có tô đúng nồi được +1 sao (tối đa 5); tại quán thêm 2.000đ/tô trùng, sau hũ tip và trước payday ×2. Online chỉ có hiệu ứng sao. Nhóm giao dở/bỏ về không nhận thưởng hoàn tất. Gia truyền không trực tiếp đổi giá vốn/giá mặc định/chọn topping/tốc độ hoặc hệ số khách; sao mới mới ảnh hưởng thu hút trong ca.
+Nước lẩu gia truyền (source 2.3.9): mở từ ngày 3 sau hướng dẫn. App **luôn giả định làm thành công**, tự đề xuất một nồi đã mở và đang bán; không nhập trạng thái hoặc chọn nồi trước. Secret cũ trong localStorage/optimize bị bỏ qua, các thông số quán khác được giữ. Ngày 1–2 không áp hiệu ứng.
 
-Chưa thử: sau tìm giá, so không gia truyền với từng nước lèo đang bán giả định làm đúng, cùng bảng giá và 256 seed. Tối đa 10 kịch bản, xếp theo lợi nhuận trung bình; báo chưa rõ khi khoảng chênh lệch cặp seed chứa 0. Đã chọn chỉ so nồi bị khóa; hết lượt không khuyên đổi; đã đúng thì giá đề xuất tính buff thật và so none chỉ để giải thích. Đây là đề xuất có điều kiện trên cùng bảng giá, không phải tìm tối ưu toàn bộ giá+nồi. Công cụ không giải minigame, không tính xác suất nhớ đúng và không tự bật hiệu ứng. Sau khi làm đúng trong game, khai báo active và tìm giá lại.
+Nhóm hoàn tất có tô đúng nồi được +1 sao (tối đa 5); tại quán thêm 2.000đ/tô trùng, sau hũ tip và trước payday ×2. Online chỉ có hiệu ứng sao. Nhóm giao dở/bỏ về không nhận thưởng hoàn tất. Gia truyền không trực tiếp đổi giá vốn/chọn topping/tốc độ hoặc hệ số khách; sao mới ảnh hưởng thu hút trong ca.
 
-Các bài `check-secret.cjs` kiểm tra riêng 9 nồi, nhóm 1–3 tô, các kênh bán, tip/sao/thưởng, trạng thái, nhiều menu/quá tải và comparator. Audit nguồn ở `audits/secret-broth-2.3.9.md`; kết quả chạy thực và giới hạn ở `tasks/verification.md`.
+So các nồi cùng bảng giá cuối và 256 seed, chọn lợi nhuận trung bình cao nhất trong các nồi hợp lệ. Không gia truyền chỉ là mốc giải thích, không được đề xuất; hòa chọn theo thứ tự catalog. Báo chưa rõ khi chênh lệch giữa nồi đứng đầu và một nồi khác còn trong vùng nhiễu của cặp seed. Một nồi không báo mơ hồ giữa các nồi. Baseline so giá hiện tại với giá đề xuất dùng cùng nồi cuối; chênh lệch gia truyền so với none trình bày riêng. Phương án phụ được chấm lại bằng 160 seed với nồi cuối. Công cụ không giải minigame hay tính xác suất làm đúng.
+
+`simulate`/`batch`/`compareSecret` vẫn cho phép trạng thái explicit để kiểm tra scenario; `recommendSecret`/`optimize` là luồng auto của app. `check-secret.cjs` kiểm tra luật của 9 nồi, nhóm 1–3 tô, tiền/sao, các kênh bán và quá tải. `check-auto-broth.cjs` kiểm tra lựa chọn nồi, hòa/uncertainty, bỏ secret cũ, giới hạn hai search và toàn bộ thống kê theo nồi cuối. `check-worker.cjs` kiểm tra Worker/direct. Audit nguồn ở `audits/secret-broth-2.3.9.md`; bằng chứng chạy ở `tasks/verification.md`.

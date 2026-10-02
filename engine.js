@@ -137,7 +137,7 @@ function pairedDifference(a,b){
  const se=deltas.length===1?0:Math.sqrt(deltas.reduce((sum,x)=>sum+(x-delta)**2,0)/(deltas.length-1)/deltas.length);
  return {delta,se,low:delta-1.96*se,high:delta+1.96*se};
 }
-async function compareSecret(s,p,progress=()=>{}){
+async function compareSecret(s,p,progress=()=>{},eligibleOnly=false){
  validate({...s,prices:p});
  const status=s.secret?.day===s.day?(s.secret?.status??'none'):'none';
  if(s.day<3||status==='exhausted')return {mode:s.day<3?'unavailable':'exhausted',rows:[],best:null,uncertain:false};
@@ -148,14 +148,16 @@ async function compareSecret(s,p,progress=()=>{}){
   const runs=run({...s,secret:{day:s.day,broth,status:'active'}});samples.set(broth,runs);
   rows.push({broth,stats:summarize(runs),difference:pairedDifference(runs,baseline)});
  }
- rows.sort((a,b)=>b.stats.profit-a.stats.profit);
- const best=rows[0],runner=rows[1],lead=runner?pairedDifference(samples.get(best.broth),samples.get(runner.broth)):null;
+ const order=new Map(broths.map((b,i)=>[b.id,i]));
+ rows.sort((a,b)=>eligibleOnly?((a.broth===null)-(b.broth===null)||b.stats.profit-a.stats.profit||(order.get(a.broth)??Infinity)-(order.get(b.broth)??Infinity)):b.stats.profit-a.stats.profit);
+ const ranked=eligibleOnly?rows.filter(row=>row.broth!==null):rows;
+ const best=ranked[0],runner=ranked[1],lead=runner?pairedDifference(samples.get(best.broth),samples.get(runner.broth)):null;
  // Every challenger must be distinguishable, not just the second by mean.
- const uncertain=rows.slice(1).some(row=>pairedDifference(samples.get(best.broth),samples.get(row.broth)).low<=0);
+ const uncertain=ranked.slice(1).some(row=>pairedDifference(samples.get(best.broth),samples.get(row.broth)).low<=0);
  return {mode:status,rows,best:best.broth,uncertain,lead};
 }
 const rounded=(id,p)=>clamp(Math.round(p/1000)*1000,1000,Math.floor(byId[id].base*3/1000)*1000);
-async function optimize(s,progress=()=>{}){
+async function searchPrices(s,progress=()=>{}){
  validate(s);const m=menu(s),seen=new Set(),all=[],active=[...s.broths,...s.tops];
  const add=p=>{const key=active.map(id=>p[id]).join(',');if(seen.has(key))return;seen.add(key);const stats=batch(s,p,20,1234);all.push({prices:p,stats});};
  const topCap=id=>Math.floor(byId[id].base*1.5*m/1000)*1000;
@@ -173,9 +175,29 @@ async function optimize(s,progress=()=>{}){
  const finalists=all.sort((a,b)=>b.stats.profit-a.stats.profit).slice(0,8);
  for(let j=0;j<finalists.length;j++){finalists[j].stats=batch(s,finalists[j].prices,160,800000);progress('Kiểm chứng phương án '+(j+1)+'/8');await new Promise(r=>setTimeout(r,0));}
  const best=finalists.sort((a,b)=>b.stats.profit-a.stats.profit)[0];
- const baseline=batch(s,s.prices,256,9000000),validated=batch(s,best.prices,256,9000000);
- const secret=await compareSecret(s,best.prices,progress);
- return {prices:best.prices,stats:validated,baseline,alternatives:finalists.slice(0,5),tested:all.length,secret};
+ return {prices:best.prices,alternatives:finalists,tested:all.length};
 }
-const api={maxChapter,service,data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,gameForecast,expensive,patience,secretBroth,completeGroup,pairedDifference,compareSecret,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
+// The planner assumes success; explicit simulation/comparison remains available for audits.
+function withoutSecret(s){return {...s,secret:{day:s.day,broth:null,status:'none'}};}
+async function recommendSecret(s,p,progress=()=>{}){
+ const comparison=await compareSecret(withoutSecret(s),p,progress,true);
+ return comparison.mode==='unavailable'?comparison:{...comparison,mode:'auto'};
+}
+async function optimize(s,progress=()=>{}){
+ const clean=withoutSecret(s);validate(clean);
+ const first=await searchPrices(clean,progress);
+ let search=first,searchPasses=1,searchSeedBroth=null;
+ if(clean.day>=3){
+  searchSeedBroth=(await recommendSecret(clean,first.prices,progress)).best;
+  search=await searchPrices({...clean,secret:{day:clean.day,broth:searchSeedBroth,status:'active'}},progress);searchPasses++;
+ }
+ // Freeze the price board, then compare all eligible broths on identical days.
+ const secret=await recommendSecret(clean,search.prices,progress);
+ const final=secret.best?{...clean,secret:{day:clean.day,broth:secret.best,status:'active'}}:clean;
+ const stats=secret.best?secret.rows.find(row=>row.broth===secret.best).stats:batch(final,search.prices,256,9000000);
+ const alternatives=search.alternatives.map(x=>({prices:x.prices,stats:batch(final,x.prices,160,800000)})).sort((a,b)=>b.stats.profit-a.stats.profit).slice(0,5);
+ return {prices:search.prices,stats,baseline:batch(final,clean.prices,256,9000000),alternatives,tested:first.tested+(searchPasses===2?search.tested:0),secret,searchPasses,searchSeedBroth};
+}
+
+const api={maxChapter,service,data,items,broths,tops,byId,upgrades,staff,events,defaults,validate,traffic,gameForecast,expensive,patience,secretBroth,completeGroup,pairedDifference,compareSecret,recommendSecret,simulate,batch,optimize};if(typeof module==='object')module.exports=api;else root.M=api;
 })(typeof window!=='undefined'?window:globalThis);

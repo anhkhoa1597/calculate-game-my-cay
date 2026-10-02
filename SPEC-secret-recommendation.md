@@ -1,6 +1,6 @@
 # Spec: secret-recommendation
 
-Phạm vi đã chốt trong CAPABILITY-MAP.md; ghi rõ kỹ thuật để lập plan, chưa triển khai. Thay thế luồng trạng thái gia truyền thủ công của SPEC.md:195, giữ nguyên công thức buff đã kiểm chứng.
+Phạm vi đã chốt trong CAPABILITY-MAP.md; ghi rõ kỹ thuật để lập plan, đã duyệt triển khai. Thay thế luồng trạng thái gia truyền thủ công của SPEC.md:195, giữ nguyên công thức buff đã kiểm chứng.
 
 ## Mục tiêu
 App đề xuất nước lèo gia truyền nào trong menu khi luôn giả định làm đúng; người dùng không nhập trạng thái hoặc chọn nồi trước. Ngày >=3 sau hướng dẫn mới có gia truyền; ngày 1–2 giữ tính toán không buff. Cấu hình lưu cũ không khóa lựa chọn theo secret cũ.
@@ -16,6 +16,9 @@ App đề xuất nước lèo gia truyền nào trong menu khi luôn giả đị
 Giữ search grid/coordinate hiện có. Khởi tạo bảng giá không buff → so nồi để lấy nồi hạt giống → chạy thêm tối đa một search với buff nồi đó → so mọi nồi lại ở bảng giá cuối. Nồi đứng đầu theo mean tại bảng giá cuối là đề xuất; kể cả đổi nồi, stats phải lấy đúng hàng so cuối. Không lặp đến hội tụ hoặc chạy full search cho từng nồi. Bảng giá là đề xuất từ tìm kiếm có giới hạn, không hứa tối ưu đồng thời giá+nồi. Alternatives nếu hiện phải được đánh giá lại với nồi cuối, và không gọi giá được chọn là cao nhất của một ranking tính bằng nồi khác.
 
 ## Kiểm thử và nghiệm thu
+
+Cập nhật theo chỉ đạo cuối: triển khai tuần tự rồi test core nước lẩu; không chạy kiểm thử UI/browser. Các điều kiện UI dưới đây là yêu cầu triển khai, không phải bằng chứng đã test.
+
 - Ngày 1–2, menu một nồi/cả 9 nồi, online/tại quán/hỗn hợp, sao thấp/cao, nhanh/chậm/quá tải, payday/menu màu/topping: giá hợp lệ, ledger đúng, nồi hợp lệ và stats khớp batch độc lập.
 - Không chọn none, không chọn theo seed thuận lợi, giữ cùng giá/seed khi so, xử lý hòa ổn định; snapshot/input không mutate; secret cũ locked/exhausted/active không đổi kết quả auto.
 - Worker/direct khớp kể cả result.secret; progress/request id/error vẫn đúng. Giữ regression công thức gia truyền, forecast37 ngày2, min–max và core 5 chương. Budget tối đa hai search, một lượt so nồi khởi tạo và một lượt so cuối; báo progress cho mobile.
@@ -37,7 +40,6 @@ node --test check-secret.cjs
 node --test check-forecast.cjs
 node check.cjs
 node check-worker.cjs
-node check-ui.cjs
 node --check engine.js
 node --check app.js
 node --check worker.js

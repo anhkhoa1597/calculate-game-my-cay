@@ -71,3 +71,32 @@ Lần chạy đầu có một assertion fixture sai: chọn chương tại quán
 Rà diff theo correctness/readability/architecture/security/performance: dùng một helper rating/tip trong simulate và tests, không có engine lợi nhuận thứ hai; validate input/Worker snapshot, encode tên món; không thêm dependency/network trong app; so sánh bị chặn ở tối đa10×256 lượt và chạy nền. Không có issue bắt buộc còn mở.
 
 Giới hạn giữ nguyên: pipeline bếp lý tưởng, đủ hàng, sai số tốc độ/thứ tự thao tác và sao đầu ngày xấp xỉ, không mô phỏng drama/du lịch/giao xa/reply/đổi level giữa ca. Không giải minigame hoặc tính xác suất nhớ đúng; một ngày, cùng bảng giá, tối ưu trong tập đã thử. Min–max là mẫu; CI chỉ mô tả nhiễu mô phỏng, không sai số mô hình. Push và Pages là các bước riêng; chỉ xác nhận deployment khi có bằng chứng.
+
+## 02/10/2026 — Auto gia truyền và giao diện gọn (A1–A5)
+
+Chỉ đạo cuối: triển khai tuần tự xong mới test, không chạy kiểm thử UI; tập trung core nước lẩu. Phần này thay thế luồng gia truyền thủ công trong bản S1–S6 ở trên.
+
+### Thay đổi
+
+- `recommendSecret` và `optimize` luôn giả định thành công từ ngày 3. Bỏ secret cũ trước validate luồng auto, chỉ chọn nồi đang bán/đã mở; none là mốc tham chiếu, không cạnh tranh lựa chọn. Tie theo catalog, uncertainty so nồi với nồi; một nồi không báo bất định giữa nồi.
+- Tối đa hai search: không buff → chọn nồi hạt giống → search có buff → cố định giá → so lại mọi nồi. Stats chính lấy đúng hàng nồi cuối/256 seed; baseline giá hiện tại và alternatives cũng tính lại theo nồi cuối. Giữ API explicit simulate/batch/compareSecret cho scenario/audit, không đổi luật rating/tip/RNG của game.
+- So nồi dùng lại các mẫu đã chạy để tính paired CI, không mô phỏng trùng một lần nữa. Worker dùng chung engine, không có công thức riêng trong UI.
+- Ba màn Quán/Menu/Kết quả dùng một state, history/hash và ghi vị trí cuộn trong phiên. Thanh dưới có Tìm giá ở mọi màn; tìm/lọc món sticky, menu hàng gọn. Input mobile44px/desktop38px; bỏ hero và input gia truyền manual. Kết quả hiển thị nồi, lời, giá, tô mean/min–max; các chi tiết đóng mặc định. Save/restore bỏ secret cũ, không tự ghi thành công thật vào cấu hình.
+
+### Kiểm tra core thực tế
+
+- `node --test check-secret.cjs check-auto-broth.cjs check-forecast.cjs`: **28/28 PASS**, 0 fail/skip. Luật gia truyền15 bài, lựa chọn auto6 bài, forecast7 bài.
+- Giữ ma trận9 nồi ×3 kênh ×2 trạng thái ×12 seed =648 ngày kiểm tra ledger/counts; menu trộn320 ngày, cùng hồi quy6 fixture cố định của engine trước tính gia truyền. Kiểm tra thứ tự phạt/bù giá rẻ/+1 sao, nhóm hoàn tất, online tip0, hũ tip/tô sứ/mèo/payday/reviewer, giá và vốn.
+- Auto riêng cả9 nồi với online/tại quán/hỗn hợp, sao2/5, nhanh/chậm, topping/menu màu/payday. None hòa vẫn chọn nồi, hòa nhiều nồi ổn định dù menu đảo thứ tự; uncertainty dùng paired CI giữa các nồi. Secret cũ locked/exhausted/active hoặc malformed không khóa lựa chọn; không mutate input.
+- Ngày1/2 không buff, ngày3 tự chọn; full9 nồi/payday và full menu bếp quá tải. Tính lại batch độc lập cho stats chính, từng hàng so nồi, baseline và mọi alternative: khớp hoàn toàn theo giá/seed/nồi cuối. Giá đúng bước1k và ngưỡng safe. Search budget đúng1 hoặc2.
+- Fixture chứng minh đổi nồi cuối: LV3/chương2/ngày9,5sao/30reviews,kimchi+tomyum,bo+rau,action0,45/event normal. Search hạt giống kimchi, kết quả cuối tomyum; headline/baseline/alternatives khớp tomyum, khác số liệu kimchi.
+- Full-payday:298 lượt bảng giá qua2 search, cuối riêu, mean38,324 tô/min32/max44; overload:270 lượt/2 search, cuối tiêu xanh, mean5,246/min3/max7. Lần chạy cuối đo cả optimize và batch xác minh độc lập trong test: khoảng17,3s và11,2s, đồng thời có Worker check; không phải benchmark điện thoại.
+- `node check.cjs`: PASS core5 chương, thu hút, phí/vốn/thuê, công suất/quá tải và ledger. LV1/ngày1/kimchi30k:1.000 seed, mean22,688/min20/max25;140 ngày đúng24 tô. Repro forecast37 ngày2 vẫn được bảo vệ riêng.
+- `node check-worker.cjs`: PASS3 cấu hình ngày2/ngày3/LV9 full9 nồi+full topping/payday. Toàn bộ result gồm stats/baseline/alternatives/secret khớp direct engine; progress/request id đúng, giá/min–max đúng, menu rỗng trả lỗi; secret cũ mã topping bị bỏ qua trong auto như yêu cầu. Lượt này chạy lại sau tối giản comparator để xác minh source cuối.
+- `node --check engine.js`, `node --check app.js`, `node --check worker.js`, `git diff --check`: PASS.
+
+### Rà chất lượng và giới hạn
+
+Rà code theo code-review-and-quality: một engine tiền/sao, ranking chỉ nhận nồi hợp lệ, seed/giá giữa các nồi giống nhau, stats cuối không dùng nồi hạt giống. Giữ encode tên món, validate snapshot, Worker progress/id/lỗi; search và comparator có giới hạn, không thêm dependency/framework.
+
+Không chạy `check-ui.cjs`, browser, screenshot hay kiểm tra bàn phím theo yêu cầu. Các thay đổi UI được triển khai và rà source/cú pháp, không tuyên bố đã kiểm thử hành vi hoặc bố cục thực tế. Giữ giới hạn mô hình trước: pipeline lý tưởng, đủ nguyên liệu, tốc độ/sao đầu ngày xấp xỉ; không giải minigame. Đề xuất có giới hạn hai search, không chứng minh tối ưu toàn cục giá+nồi. Min–max là mẫu, CI chỉ phản ánh ngẫu nhiên mô phỏng. Push không đồng nghĩa xác nhận Pages đã deploy.
